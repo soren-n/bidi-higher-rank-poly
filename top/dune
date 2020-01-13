@@ -1,0 +1,14 @@
+(ocamllex
+  (modules Lexer))
+
+(menhir
+  (flags --explain)
+  (modules Parser))
+
+(executable
+  (name Main)
+  (libraries Util Bin))
+
+(install
+  (section bin)
+  (files (Main.exe as BHRP)))
