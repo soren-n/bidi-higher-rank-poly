@@ -44,28 +44,25 @@ let anonymous path =
 let usage =
   "Usage: BHRP [file] ..."
 
-let interp expr ctx env =
+let interp ctx env expr =
   Valid.check_expr expr ctx error @@ fun () ->
   Check.synth expr ctx error @@ fun result_t ->
   Interp.eval expr env @@ fun result_v ->
   success result_v result_t
 
-let interp_input input ctx env =
+let interp_input ctx env input =
   match parse_input input with
   | Result.Error msg -> error msg
-  | Result.Value expr -> interp expr ctx env
+  | Result.Value expr -> interp ctx env expr
 
-let interp_file path ctx env =
+let interp_file ctx env path =
   match parse_file path with
-  | Result.Error msg -> error msg
-  | Result.Value expr -> interp expr ctx env
+  | Result.Error msg -> error msg; exit 1
+  | Result.Value expr -> interp ctx env expr
 
-let rec interp_files paths ctx env =
-  match paths with
-  | [] -> ()
-  | path :: paths1 ->
-    interp_file path ctx env;
-    interp_files paths1 ctx env
+let interp_files ctx env paths =
+  List.iter (interp_file ctx env) paths;
+  exit 0
 
 let read_input () =
   let _complete input =
@@ -101,7 +98,7 @@ let repl ctx env =
     let input = read_input () in
     if input = "exit" then exit 0 else
     if input = "context" then report_context ctx else
-    interp_input input ctx env
+    interp_input ctx env input
   done
 
 let () =
@@ -109,5 +106,5 @@ let () =
   Arg.parse options anonymous usage;
   let _files = !files in
   if (List.length _files) <> 0
-  then interp_files !files Native.tenv Native.venv
+  then interp_files Native.tenv Native.venv !files
   else repl Native.tenv Native.venv

@@ -29,6 +29,9 @@ module List = struct
     in
     _visit term null_case
 
+  let iter f term =
+    fold () (fun item () -> f item) term
+
   let map f term =
     fold [] (compose cons f) term
 
