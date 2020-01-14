@@ -46,36 +46,6 @@ let extend label ctx return =
   let var = poly_var (ref None) in
   bind_t label var ctx return
 
-let rec valid_poly poly ctx fail return =
-  match poly with
-  | PUnit -> return ()
-  | PParam name -> bound_v name ctx fail return
-  | PVar exist ->
-    begin match !exist with
-    | None -> return ()
-    | Some mono -> valid_mono mono ctx fail return
-    end
-  | PArrow (dom, codom) ->
-    valid_poly dom ctx fail @@ fun () ->
-    valid_poly codom ctx fail return
-  | PForall (param, poly1) ->
-    extend param ctx @@ fun ctx1 ->
-    valid_poly poly1 ctx1 fail return
-  | PMono mono ->
-    valid_mono mono ctx fail return
-and valid_mono mono ctx fail return =
-  match mono with
-  | MUnit -> return ()
-  | MParam name -> bound_v name ctx fail return
-  | MVar exist ->
-    begin match !exist with
-    | None -> return ()
-    | Some mono1 -> valid_mono mono1 ctx fail return
-    end
-  | MArrow (dom, codom) ->
-    valid_mono dom ctx fail @@ fun () ->
-    valid_mono codom ctx fail return
-
 let rec instantiate_l l_exist poly ctx fail return =
   match poly with
   | PUnit ->
@@ -100,7 +70,6 @@ let rec instantiate_l l_exist poly ctx fail return =
     extend param ctx @@ fun ctx1 ->
     instantiate_l l_exist poly1 ctx1 fail return
   | PMono mono ->
-    valid_mono mono ctx fail @@ fun () ->
     l_exist := Some mono;
     return ()
 and instantiate_r poly r_exist ctx fail return =
@@ -127,7 +96,6 @@ and instantiate_r poly r_exist ctx fail return =
     extend param ctx @@ fun ctx1 ->
     instantiate_r poly1 r_exist ctx1 fail return
   | PMono mono ->
-    valid_mono mono ctx fail @@ fun () ->
     r_exist := Some mono;
     return ()
 
@@ -226,7 +194,6 @@ let rec synth expr ctx fail return =
     normalize func_t @@ fun func_t1 ->
     synth_apply func_t1 arg ctx fail return
   | EAnno (expr1, poly) ->
-    valid_poly poly ctx fail @@ fun () ->
     check expr1 poly ctx fail @@ fun () ->
     return poly
 and synth_apply poly expr ctx fail return =

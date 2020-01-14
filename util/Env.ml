@@ -46,6 +46,14 @@ let bound equal key env fail return =
   in
   _visit env
 
+let keys env return =
+  fold
+    (fun return -> return Set.empty)
+    (fun key _value visit_env return ->
+      visit_env @@ fun keys ->
+      Set.add key keys return)
+    env return
+
 let print print_key print_value env return =
   let open Printf in
   let _cont k x y xys = k ((sprintf "%s = %s" x y) :: xys) in

@@ -1,9 +1,6 @@
 type ('key, 'value) env
-
 val empty : ('key, 'value) env
-
 val from_list : ('key * 'value) list -> ('key, 'value) env
-
 val fold : 'a -> ('key -> 'value -> 'a -> 'a) -> ('key, 'value) env -> 'a
 
 val bind :
@@ -24,6 +21,11 @@ val bound :
   'key -> ('key, 'value) env ->
   (unit -> 'result) ->
   (unit -> 'result) ->
+  'result
+
+val keys :
+  ('key, 'value) env ->
+  ('key Set.set -> 'result) ->
   'result
 
 val print :

@@ -9,17 +9,18 @@ let report header msg =
 let error msg =
   report "Error: " msg
 
+let success value poly =
+  Interp.print_value value @@ fun value_s ->
+  Print.print_poly poly @@ fun poly_s ->
+  printf "%s : %s\n" value_s poly_s
+
 let parse parser tokens =
   try
     let result = parser Lexer.token tokens in
     Result.make_value result
   with
-  | Lexer.Error msg ->
-    Result.make_error
-      (sprintf "Lexer error: %s" msg)
-  | Parser.Error ->
-    Result.make_error
-      "Parser error"
+  | Lexer.Error msg -> Result.make_error (sprintf "Lexing: %s" msg)
+  | Parser.Error -> Result.make_error "Parsing"
 
 let parse_file path =
   let file_in = open_in path in
@@ -40,29 +41,28 @@ let anonymous path =
 let usage =
   "Usage: BHRP [file] ..."
 
-let interp expr ctx =
+let interp expr ctx env =
+  Valid.check_expr expr ctx error @@ fun () ->
   Check.synth expr ctx error @@ fun result_t ->
-  Interp.eval expr Native.venv @@ fun result_v ->
-  Interp.print_value result_v @@ fun result_v_s ->
-  Print.print_poly result_t @@ fun result_t_s ->
-  report "" (sprintf "%s : %s" result_v_s result_t_s)
+  Interp.eval expr env @@ fun result_v ->
+  success result_v result_t
 
-let interp_input input ctx =
+let interp_input input ctx env =
   match parse_input input with
   | Result.Error msg -> error msg
-  | Result.Value expr -> interp expr ctx
+  | Result.Value expr -> interp expr ctx env
 
-let interp_file path ctx =
+let interp_file path ctx env =
   match parse_file path with
   | Result.Error msg -> error msg
-  | Result.Value expr -> interp expr ctx
+  | Result.Value expr -> interp expr ctx env
 
-let rec interp_files paths ctx =
+let rec interp_files paths ctx env =
   match paths with
   | [] -> ()
   | path :: paths1 ->
-    interp_file path ctx;
-    interp_files paths1 ctx
+    interp_file path ctx env;
+    interp_files paths1 ctx env
 
 let read_input () =
   let _complete input =
@@ -93,12 +93,12 @@ let report_context ctx =
       return (sprintf "%s : %s\n%s" name poly_s binds))
     venv (report "Context:\n")
 
-let repl ctx =
+let repl ctx env =
   while true do
     let input = read_input () in
     if input = "exit" then exit 0 else
     if input = "context" then report_context ctx else
-    interp_input input ctx
+    interp_input input ctx env
   done
 
 let () =
@@ -106,5 +106,5 @@ let () =
   Arg.parse options anonymous usage;
   let _files = !files in
   if (List.length _files) <> 0
-  then interp_files !files Native.ctx
-  else repl Native.ctx
+  then interp_files !files Native.tenv Native.venv
+  else repl Native.tenv Native.venv
