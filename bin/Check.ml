@@ -76,7 +76,7 @@ and valid_mono mono ctx fail return =
     valid_mono dom ctx fail @@ fun () ->
     valid_mono codom ctx fail return
 
-let rec instance_l l_exist poly ctx fail return =
+let rec instantiate_l l_exist poly ctx fail return =
   match poly with
   | PUnit ->
     l_exist := Some MUnit;
@@ -86,24 +86,24 @@ let rec instance_l l_exist poly ctx fail return =
     return ()
   | PParam name ->
     lookup_t name ctx fail @@ fun poly1 ->
-    instance_l l_exist poly1 ctx fail return
+    instantiate_l l_exist poly1 ctx fail return
   | PArrow (dom, codom) ->
     let dom_exist = ref None in
     let codom_exist = ref None in
     l_exist := Some (mono_arrow
       (mono_var dom_exist)
       (mono_var codom_exist));
-    instance_r dom dom_exist ctx fail @@ fun () ->
+    instantiate_r dom dom_exist ctx fail @@ fun () ->
     normalize codom @@ fun codom1 ->
-    instance_l codom_exist codom1 ctx fail return
+    instantiate_l codom_exist codom1 ctx fail return
   | PForall (param, poly1) ->
     extend param ctx @@ fun ctx1 ->
-    instance_l l_exist poly1 ctx1 fail return
+    instantiate_l l_exist poly1 ctx1 fail return
   | PMono mono ->
     valid_mono mono ctx fail @@ fun () ->
     l_exist := Some mono;
     return ()
-and instance_r poly r_exist ctx fail return =
+and instantiate_r poly r_exist ctx fail return =
   match poly with
   | PUnit ->
     r_exist := Some MUnit;
@@ -113,19 +113,19 @@ and instance_r poly r_exist ctx fail return =
     return ()
   | PParam name ->
     lookup_t name ctx fail @@ fun poly1 ->
-    instance_r poly1 r_exist ctx fail return
+    instantiate_r poly1 r_exist ctx fail return
   | PArrow (dom, codom) ->
     let dom_exist = ref None in
     let codom_exist = ref None in
     r_exist := Some (mono_arrow
       (mono_var dom_exist)
       (mono_var codom_exist));
-    instance_l dom_exist dom ctx fail @@ fun () ->
+    instantiate_l dom_exist dom ctx fail @@ fun () ->
     normalize codom @@ fun codom1 ->
-    instance_r codom1 codom_exist ctx fail return
+    instantiate_r codom1 codom_exist ctx fail return
   | PForall (param, poly1) ->
     extend param ctx @@ fun ctx1 ->
-    instance_r poly1 r_exist ctx1 fail return
+    instantiate_r poly1 r_exist ctx1 fail return
   | PMono mono ->
     valid_mono mono ctx fail @@ fun () ->
     r_exist := Some mono;
@@ -179,13 +179,13 @@ let subtype left right ctx fail return =
       if left1 = right1 then return () else _fail left right
     | PVar l_exist, PVar r_exist ->
       if l_exist == r_exist then return ()
-      else instance_l l_exist right ctx fail return
+      else instantiate_l l_exist right ctx fail return
     | PVar l_exist, _ ->
       acyclic_poly l_exist right fail @@ fun () ->
-      instance_l l_exist right ctx fail return
+      instantiate_l l_exist right ctx fail return
     | _, PVar r_exist ->
       acyclic_poly r_exist left fail @@ fun () ->
-      instance_r left r_exist ctx fail return
+      instantiate_r left r_exist ctx fail return
     | PForall (param, left1), _ ->
       extend param ctx @@ fun ctx1 ->
       _subtype left1 right ctx1 return
