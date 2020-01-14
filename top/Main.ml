@@ -95,7 +95,7 @@ let report_context ctx =
       return (sprintf "%s : %s\n%s" name poly_s binds))
     venv (report "Context:\n")
 
-let repl ctx : unit =
+let repl ctx =
   while true do
     let input = read_input () in
     if input = "exit" then exit 0 else
