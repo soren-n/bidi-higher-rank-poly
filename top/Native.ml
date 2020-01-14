@@ -5,7 +5,7 @@ let venv =
   Env.empty
 
 let tenv =
-  Set.empty
+  Env.empty
 
 let ctx =
   Context.make venv tenv

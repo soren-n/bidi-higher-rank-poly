@@ -6,7 +6,7 @@ val from_list : ('key * 'value) list -> ('key, 'value) env
 
 val fold : 'a -> ('key -> 'value -> 'a -> 'a) -> ('key, 'value) env -> 'a
 
-val update :
+val bind :
   'key -> 'value ->
   ('key, 'value) env ->
   (('key, 'value) env -> 'result) ->

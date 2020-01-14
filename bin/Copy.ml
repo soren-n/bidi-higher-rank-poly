@@ -1,17 +1,15 @@
 open Util
 open Syntax
 
-let _exist_equal l r = l == r
-
 let rec _copy_mono mono env return =
   match mono with
   | MUnit -> return mono_unit env
   | MParam name -> return (mono_param name) env
   | MVar from_exist ->
-    Env.lookup _exist_equal from_exist env
+    Env.lookup exist_equal from_exist env
       (fun () ->
         let to_exist = ref None in
-        Env.update from_exist to_exist env @@ fun env1 ->
+        Env.bind from_exist to_exist env @@ fun env1 ->
         match !from_exist with
         | None -> return (mono_var to_exist) env1
         | Some mono1 ->
@@ -34,10 +32,10 @@ let rec _copy_poly poly env return =
   | PUnit -> return poly_unit env
   | PParam name -> return (poly_param name) env
   | PVar from_exist ->
-    Env.lookup _exist_equal from_exist env
+    Env.lookup exist_equal from_exist env
       (fun () ->
         let to_exist = ref None in
-        Env.update from_exist to_exist env @@ fun env1 ->
+        Env.bind from_exist to_exist env @@ fun env1 ->
         match !from_exist with
         | None -> return (poly_var to_exist) env1
         | Some mono1 ->

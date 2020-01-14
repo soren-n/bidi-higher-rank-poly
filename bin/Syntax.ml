@@ -1,11 +1,15 @@
 type label = string
 
+let label_equal l r = l = r
+
 type mono =
   | MUnit
   | MParam of label
   | MVar of exist
   | MArrow of mono * mono
 and exist = mono option ref
+
+let exist_equal l r = l == r
 
 let mono_unit = MUnit
 let mono_param label = MParam label

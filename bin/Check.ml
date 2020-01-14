@@ -3,46 +3,53 @@ open Syntax
 open Context
 open Print
 
-let rec apply_poly ctx poly return =
-  match poly with
-  | PUnit -> return poly_unit
-  | PParam name -> return (poly_param name)
-  | PVar exist ->
-    begin match !exist with
-    | None -> return (poly_var exist)
-    | Some mono ->
-      apply_mono ctx mono @@ fun mono1 ->
+let normalize poly return =
+  let rec _visit_poly poly return =
+    match poly with
+    | PUnit -> return poly_unit
+    | PParam name -> return (poly_param name)
+    | PVar exist ->
+      begin match !exist with
+      | None -> return (poly_var exist)
+      | Some mono ->
+        _visit_mono mono @@ fun mono1 ->
+        return (poly_mono mono1)
+      end
+    | PArrow (dom, codom) ->
+      _visit_poly dom @@ fun dom1 ->
+      _visit_poly codom @@ fun codom1 ->
+      return (poly_arrow dom1 codom1)
+    | PForall (param, poly1) ->
+      _visit_poly poly1 @@ fun poly2 ->
+      return (poly_forall param poly2)
+    | PMono mono ->
+      _visit_mono mono @@ fun mono1 ->
       return (poly_mono mono1)
-    end
-  | PArrow (dom, codom) ->
-    apply_poly ctx dom @@ fun dom1 ->
-    apply_poly ctx codom @@ fun codom1 ->
-    return (poly_arrow dom1 codom1)
-  | PForall (param, poly1) ->
-    apply_poly ctx poly1 @@ fun poly2 ->
-    return (poly_forall param poly2)
-  | PMono mono ->
-    apply_mono ctx mono @@ fun mono1 ->
-    return (poly_mono mono1)
-and apply_mono ctx mono return =
-  match mono with
-  | MUnit -> return mono_unit
-  | MParam name -> return (mono_param name)
-  | MVar exist ->
-    begin match !exist with
-    | None -> return (mono_var exist)
-    | Some mono ->
-      apply_mono ctx mono return
-    end
-  | MArrow (dom, codom) ->
-    apply_mono ctx dom @@ fun dom1 ->
-    apply_mono ctx codom @@ fun codom1 ->
-    return (mono_arrow dom1 codom1)
+  and _visit_mono mono return =
+    match mono with
+    | MUnit -> return mono_unit
+    | MParam name -> return (mono_param name)
+    | MVar exist ->
+      begin match !exist with
+      | None -> return (mono_var exist)
+      | Some mono ->
+        _visit_mono mono return
+      end
+    | MArrow (dom, codom) ->
+      _visit_mono dom @@ fun dom1 ->
+      _visit_mono codom @@ fun codom1 ->
+      return (mono_arrow dom1 codom1)
+  in
+  _visit_poly poly return
+
+let extend label ctx return =
+  let var = poly_var (ref None) in
+  bind_t label var ctx return
 
 let rec valid_poly poly ctx fail return =
   match poly with
   | PUnit -> return ()
-  | PParam name -> bound name ctx fail return
+  | PParam name -> bound_v name ctx fail return
   | PVar exist ->
     begin match !exist with
     | None -> return ()
@@ -59,7 +66,7 @@ let rec valid_poly poly ctx fail return =
 and valid_mono mono ctx fail return =
   match mono with
   | MUnit -> return ()
-  | MParam name -> bound name ctx fail return
+  | MParam name -> bound_v name ctx fail return
   | MVar exist ->
     begin match !exist with
     | None -> return ()
@@ -69,56 +76,17 @@ and valid_mono mono ctx fail return =
     valid_mono dom ctx fail @@ fun () ->
     valid_mono codom ctx fail return
 
-let rec subst_poly param to_exist poly return =
-  match poly with
-  | PUnit -> return poly
-  | PParam name ->
-    if param = name
-    then return (poly_var to_exist)
-    else return poly
-  | PVar from_exist ->
-    begin match !from_exist with
-    | None -> return poly
-    | Some mono ->
-      subst_mono param to_exist mono @@ fun mono1 ->
-      from_exist := Some mono1;
-      return poly
-    end
-  | PArrow (dom, codom) ->
-    subst_poly param to_exist dom @@ fun dom1 ->
-    subst_poly param to_exist codom @@ fun codom1 ->
-    return (poly_arrow dom1 codom1)
-  | PForall (param, poly1) ->
-    subst_poly param to_exist poly1 @@ fun poly2 ->
-    return (poly_forall param poly2)
-  | PMono mono ->
-    subst_mono param to_exist mono @@ fun mono1 ->
-    return (poly_mono mono1)
-and subst_mono param to_exist mono return =
-  match mono with
-  | MUnit -> return mono
-  | MParam name ->
-    if param = name
-    then return (mono_var to_exist)
-    else return mono
-  | MVar from_exist ->
-    begin match !from_exist with
-    | None -> return mono
-    | Some mono1 ->
-      subst_mono param to_exist mono1 @@ fun mono2 ->
-      from_exist := Some mono2;
-      return mono
-    end
-  | MArrow (dom, codom) ->
-    subst_mono param to_exist dom @@ fun dom1 ->
-    subst_mono param to_exist codom @@ fun codom1 ->
-    return (mono_arrow dom1 codom1)
-
 let rec instance_l l_exist poly ctx fail return =
   match poly with
+  | PUnit ->
+    l_exist := Some MUnit;
+    return ()
   | PVar r_exist ->
     r_exist := Some (mono_var l_exist);
     return ()
+  | PParam name ->
+    lookup_t name ctx fail @@ fun poly1 ->
+    instance_l l_exist poly1 ctx fail return
   | PArrow (dom, codom) ->
     let dom_exist = ref None in
     let codom_exist = ref None in
@@ -126,7 +94,7 @@ let rec instance_l l_exist poly ctx fail return =
       (mono_var dom_exist)
       (mono_var codom_exist));
     instance_r dom dom_exist ctx fail @@ fun () ->
-    apply_poly ctx codom @@ fun codom1 ->
+    normalize codom @@ fun codom1 ->
     instance_l codom_exist codom1 ctx fail return
   | PForall (param, poly1) ->
     extend param ctx @@ fun ctx1 ->
@@ -135,12 +103,17 @@ let rec instance_l l_exist poly ctx fail return =
     valid_mono mono ctx fail @@ fun () ->
     l_exist := Some mono;
     return ()
-  | _ -> assert false (* Unreachable by invariant *)
 and instance_r poly r_exist ctx fail return =
   match poly with
+  | PUnit ->
+    r_exist := Some MUnit;
+    return ()
   | PVar l_exist ->
     l_exist := Some (mono_var r_exist);
     return ()
+  | PParam name ->
+    lookup_t name ctx fail @@ fun poly1 ->
+    instance_r poly1 r_exist ctx fail return
   | PArrow (dom, codom) ->
     let dom_exist = ref None in
     let codom_exist = ref None in
@@ -148,17 +121,16 @@ and instance_r poly r_exist ctx fail return =
       (mono_var dom_exist)
       (mono_var codom_exist));
     instance_l dom_exist dom ctx fail @@ fun () ->
-    apply_poly ctx codom @@ fun codom1 ->
+    normalize codom @@ fun codom1 ->
     instance_r codom1 codom_exist ctx fail return
   | PForall (param, poly1) ->
-    let l_exist = ref None in
-    subst_poly param l_exist poly1 @@ fun poly2 ->
-    instance_r poly2 r_exist ctx fail return
+    normalize poly1 @@ fun poly2 ->
+    extend param ctx @@ fun ctx1 ->
+    instance_r poly2 r_exist ctx1 fail return
   | PMono mono ->
     valid_mono mono ctx fail @@ fun () ->
     r_exist := Some mono;
     return ()
-  | _ -> assert false (* Unreachable by invariant *)
 
 let rec acyclic_poly l_exist r_poly fail return =
   let rec _visit poly return =
@@ -216,16 +188,16 @@ let subtype left right ctx fail return =
       acyclic_poly r_exist left fail @@ fun () ->
       instance_r left r_exist ctx fail return
     | PForall (param, left1), _ ->
-      let dom_exist = ref None in
-      subst_poly param dom_exist left1 @@ fun left2 ->
-      _subtype left2 right ctx return
+      normalize left1 @@ fun left2 ->
+      extend param ctx @@ fun ctx1 ->
+      _subtype left2 right ctx1 return
     | _, PForall (param, right1) ->
       extend param ctx @@ fun ctx1 ->
       _subtype left right1 ctx1 return
     | PArrow (l_dom, l_codom), PArrow (r_dom, r_codom) ->
       _subtype r_dom l_dom ctx @@ fun () ->
-      apply_poly ctx l_codom @@ fun l_codom1 ->
-      apply_poly ctx r_codom @@ fun r_codom1 ->
+      normalize l_codom @@ fun l_codom1 ->
+      normalize r_codom @@ fun r_codom1 ->
       _subtype l_codom1 r_codom1 ctx return
     | _, _ -> _fail left right
   in
@@ -234,16 +206,16 @@ let subtype left right ctx fail return =
 let rec synth expr ctx fail return =
   match expr with
   | EUnit -> return poly_unit
-  | EVar name -> lookup name ctx fail return
+  | EVar name -> lookup_v name ctx fail return
   | EAbs (param, body) ->
     let dom = poly_var (ref None) in
     let codom = poly_var (ref None) in
-    update param dom ctx @@ fun ctx1 ->
+    bind_v param dom ctx @@ fun ctx1 ->
     check body codom ctx1 fail @@ fun () ->
     return (poly_arrow dom codom)
   | EApp (func, arg) ->
     synth func ctx fail @@ fun func_t ->
-    apply_poly ctx func_t @@ fun func_t1 ->
+    normalize func_t @@ fun func_t1 ->
     synth_apply func_t1 arg ctx fail return
   | EAnno (expr1, poly) ->
     valid_poly poly ctx fail @@ fun () ->
@@ -263,21 +235,21 @@ and synth_apply poly expr ctx fail return =
     check expr dom ctx fail @@ fun () ->
     return codom
   | PForall (param, poly1) ->
-    let dom_exist = ref None in
-    subst_poly param dom_exist poly1 @@ fun poly2 ->
-    synth_apply poly2 expr ctx fail return
+    normalize poly1 @@ fun poly2 ->
+    extend param ctx @@ fun ctx1 ->
+    synth_apply poly2 expr ctx1 fail return
   | _ -> return poly
 and check expr poly ctx fail return =
   match expr, poly with
   | EUnit, PUnit -> return ()
   | EAbs (param, body), PArrow (dom, codom) ->
-    update param dom ctx @@ fun ctx1 ->
+    bind_v param dom ctx @@ fun ctx1 ->
     check body codom ctx1 fail return
   | _, PForall (param, poly1) ->
     extend param ctx @@ fun ctx1 ->
     check expr poly1 ctx1 fail return
   | _, _ ->
     synth expr ctx fail @@ fun expr_t ->
-    apply_poly ctx expr_t @@ fun expr_t1 ->
-    apply_poly ctx poly @@ fun poly1 ->
+    normalize expr_t @@ fun expr_t1 ->
+    normalize poly @@ fun poly1 ->
     subtype expr_t1 poly1 ctx fail return

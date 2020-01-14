@@ -41,13 +41,11 @@ let usage =
   "Usage: BHRP [file] ..."
 
 let interp expr ctx =
-  Check.synth expr ctx error @@ fun _expr_t ->
-  Interp.eval expr Native.venv @@ fun result ->
-  Check.synth result ctx error @@ fun result_t ->
-  Print.print_expr result @@ fun result_s ->
-  report "Result: " result_s;
+  Check.synth expr ctx error @@ fun result_t ->
+  Interp.eval expr Native.venv @@ fun result_v ->
+  Interp.print_value result_v @@ fun result_v_s ->
   Print.print_poly result_t @@ fun result_t_s ->
-  report "Type: " result_t_s
+  report "" (sprintf "%s : %s" result_v_s result_t_s)
 
 let interp_input input ctx =
   match parse_input input with

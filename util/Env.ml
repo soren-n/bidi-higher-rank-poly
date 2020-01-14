@@ -21,7 +21,7 @@ let fold empty_case bind_case env =
   in
   _visit env identity
 
-let update key value env return =
+let bind key value env return =
   return ((key, value) :: env)
 
 let lookup equal key env fail return =
@@ -58,4 +58,4 @@ let print print_key print_value env return =
       _visit env1 (_cont return key1 value1)
   in
   _visit env @@ fun binds ->
-  return (sprintf "{ %s }" (String.join_with "\n; " binds))
+  return (String.join_with "\n" binds)
