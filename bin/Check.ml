@@ -124,9 +124,8 @@ and instance_r poly r_exist ctx fail return =
     normalize codom @@ fun codom1 ->
     instance_r codom1 codom_exist ctx fail return
   | PForall (param, poly1) ->
-    normalize poly1 @@ fun poly2 ->
     extend param ctx @@ fun ctx1 ->
-    instance_r poly2 r_exist ctx1 fail return
+    instance_r poly1 r_exist ctx1 fail return
   | PMono mono ->
     valid_mono mono ctx fail @@ fun () ->
     r_exist := Some mono;
@@ -188,9 +187,8 @@ let subtype left right ctx fail return =
       acyclic_poly r_exist left fail @@ fun () ->
       instance_r left r_exist ctx fail return
     | PForall (param, left1), _ ->
-      normalize left1 @@ fun left2 ->
       extend param ctx @@ fun ctx1 ->
-      _subtype left2 right ctx1 return
+      _subtype left1 right ctx1 return
     | _, PForall (param, right1) ->
       extend param ctx @@ fun ctx1 ->
       _subtype left right1 ctx1 return
@@ -202,6 +200,16 @@ let subtype left right ctx fail return =
     | _, _ -> _fail left right
   in
   _subtype left right ctx return
+
+let rec mono_poly mono return =
+  match mono with
+  | MUnit -> return poly_unit
+  | MParam label -> return (poly_param label)
+  | MVar exist -> return (poly_var exist)
+  | MArrow (dom, codom) ->
+    mono_poly dom @@ fun dom1 ->
+    mono_poly codom @@ fun codom1 ->
+    return (poly_arrow dom1 codom1)
 
 let rec synth expr ctx fail return =
   match expr with
@@ -235,10 +243,12 @@ and synth_apply poly expr ctx fail return =
     check expr dom ctx fail @@ fun () ->
     return codom
   | PForall (param, poly1) ->
-    normalize poly1 @@ fun poly2 ->
     extend param ctx @@ fun ctx1 ->
-    synth_apply poly2 expr ctx1 fail return
-  | _ -> return poly
+    synth_apply poly1 expr ctx1 fail return
+  | PMono mono ->
+    mono_poly mono @@ fun poly1 ->
+    synth_apply poly1 expr ctx fail return
+  | _ -> assert false
 and check expr poly ctx fail return =
   match expr, poly with
   | EUnit, PUnit -> return ()
