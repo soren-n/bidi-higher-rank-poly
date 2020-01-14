@@ -3,11 +3,12 @@ open Bin
 open Util
 open Extra
 
-let report header msg =
-  printf "%s%s\n" header msg
+let report msg =
+  if (String.length msg) > 0 then
+  print_endline msg
 
 let error msg =
-  report "Error: " msg
+  printf "Error: %s\n" msg
 
 let success value poly =
   Interp.print_value value @@ fun value_s ->
@@ -19,8 +20,10 @@ let parse parser tokens =
     let result = parser Lexer.token tokens in
     Result.make_value result
   with
-  | Lexer.Error msg -> Result.make_error (sprintf "Lexing: %s" msg)
-  | Parser.Error -> Result.make_error "Parsing"
+  | Lexer.Error msg ->
+    Result.make_error (sprintf "Lexing error: %s" msg)
+  | Parser.Error ->
+    Result.make_error "Parsing error"
 
 let parse_file path =
   let file_in = open_in path in
@@ -91,7 +94,7 @@ let report_context ctx =
       Print.print_poly poly @@ fun poly_s ->
       visit_env @@ fun binds ->
       return (sprintf "%s : %s\n%s" name poly_s binds))
-    venv (report "Context:\n")
+    venv report
 
 let repl ctx env =
   while true do
