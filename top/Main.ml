@@ -8,7 +8,7 @@ let report msg =
   print_endline msg
 
 let error msg =
-  printf "⚠ Error: %s\n" msg
+  printf "🔥 Error: %s\n" msg
 
 let success value poly =
   Interp.print_value value @@ fun value_s ->
@@ -73,7 +73,7 @@ let read_input () =
     true
   in
   let prompt = "▶ " in
-  let prompt_more = "… " in
+  let prompt_more = "⋮ " in
   print_string prompt;
   let input = ref (read_line ()) in
   while not (_complete !input) do
