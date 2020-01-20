@@ -1,6 +1,26 @@
 # bidi-higher-rank-poly
 Didactic implementation of the type checker described in "Complete and Easy Bidirectional Typechecking for Higher-Rank Polymorphism" written in OCaml.
 
+# Notable detours from the paper
+Added the empty program and type explicitly in order to have a better handle on them during random program generation for testing. The reason is there are many different terms that represent the empty type in System F (e.g. ∀a.a), however in general it is undecidable whether a type term is inhabited or not in System F. Therefore generating random polymorphic type terms in general is not very useful for testing, since some of them will represent the empty type and there is no way to tell. The chosen strategy for testing therefore became; generate random simple type terms (these are always inhabited), generalise these simple type terms by randomly substituting subterms with existential variables (these are still inhabited, and in doing so you should sometimes implicitly generate polymorphic type terms); from this type term generate a random typed program.
+
+# Frontend syntax
+```text
+// Type terms
+bottom            (Empty type)
+unit              (Singleton type)
+x                 (Variables)
+s -> t            (Arrow type)
+x => t            (Universally quantified type)
+
+// Programs
+undefined         (Empty program)
+unit              (Singleton value)
+x                 (Variables)
+x => e            (Abstractions)
+f x               (Applications)
+```
+
 # Building
 ```text
 cd bidi-higher-rank-poly/
