@@ -12,8 +12,9 @@ let error msg =
   printf "🔥 Error: %s\n" msg
 
 let success value poly =
+  let ctx = Naming.make_ctx () in
   Interp.print_value value @@ fun value_s ->
-  Print.print_poly poly @@ fun poly_s ->
+  Print.print_poly ctx poly @@ fun poly_s ->
   printf "%s : %s\n" value_s poly_s
 
 let parse parser tokens =
@@ -85,11 +86,12 @@ let read_input () =
   String.sub result 0 (String.length result - 2)
 
 let report_context ctx =
+  let gen = Naming.make_ctx () in
   Context.get_venv ctx @@ fun venv ->
   Env.fold
     (fun return -> return "")
     (fun name poly visit_env return ->
-      Print.print_poly poly @@ fun poly_s ->
+      Print.print_poly gen poly @@ fun poly_s ->
       visit_env @@ fun binds ->
       return (sprintf "%s : %s\n%s" name poly_s binds))
     venv report
