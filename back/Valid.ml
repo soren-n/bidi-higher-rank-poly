@@ -65,7 +65,7 @@ let _check_expr expr tenv venv fail return =
   in
   let rec _visit expr venv return =
     match expr with
-    | EBot -> return ()
+    | EUndefined -> return ()
     | EUnit -> return ()
     | EVar name ->
       Set.member label_equal name venv (_fail name) return

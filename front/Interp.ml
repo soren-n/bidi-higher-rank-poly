@@ -3,21 +3,21 @@ open Back
 open Syntax
 
 type value =
-  | VBot
+  | VUndefined
   | VUnit
   | VClo of (label, value) Env.env * label * expr
 
 let value_expr value return =
   let rec _visit value return =
     match value with
-    | VBot -> return expr_bot
+    | VUndefined -> return expr_undefined
     | VUnit -> return expr_unit
     | VClo (env, param, body) ->
       _normalize body env @@ fun body1 ->
       return (expr_abs param body1)
   and _normalize expr env return =
     match expr with
-    | EBot -> return expr_bot
+    | EUndefined -> return expr_undefined
     | EUnit -> return expr_unit
     | EVar label ->
       Env.lookup label_equal label env
@@ -38,14 +38,14 @@ let value_expr value return =
 
 let print_value value return =
   match value with
-  | VBot -> return "undefined"
+  | VUndefined -> return "undefined"
   | VUnit -> return "unit"
   | VClo _ -> return "<closure>"
 
 let prepare env return =
   let _convert expr return =
     match expr with
-    | EBot -> return VBot
+    | EUndefined -> return VUndefined
     | EUnit -> return VUnit
     | EAbs (param, body) -> return (VClo (Env.empty, param, body))
     | _ -> assert false (* Typing invariant *)
@@ -61,7 +61,7 @@ let prepare env return =
 let eval expr env return =
   let rec _visit expr env return =
     match expr with
-    | EBot -> return VBot
+    | EUndefined -> return VUndefined
     | EUnit -> return VUnit
     | EVar name ->
       Env.lookup label_equal name env

@@ -36,14 +36,14 @@ let poly_forall param poly = PForall (param, poly)
 let poly_mono mono = PMono mono
 
 type expr =
-  | EBot
+  | EUndefined
   | EUnit
   | EVar of label
   | EAbs of label * expr
   | EApp of expr * expr
   | EAnno of expr * poly
 
-let expr_bot = EBot
+let expr_undefined = EUndefined
 let expr_unit = EUnit
 let expr_var name = EVar name
 let expr_abs param body = EAbs (param, body)

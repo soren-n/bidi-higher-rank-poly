@@ -66,7 +66,7 @@ let print_poly ctx poly return =
 let _print_expr ctx expr group return =
   let rec _print expr group return =
     match expr with
-    | EBot -> return "undefined"
+    | EUndefined -> return "undefined"
     | EUnit -> return "unit"
     | EVar name -> return name
     | EAbs (param, body) ->

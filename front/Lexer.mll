@@ -8,7 +8,8 @@ let label = ['a'-'z' 'A'-'Z' '_']['a'-'z' 'A'-'Z' '0'-'9' '_']*
 rule token = parse
     [' ' '\t' '\r'] { token lexbuf }
   | '\n'            { Lexing.new_line lexbuf; token lexbuf }
-  | "undefined"     { BOT }
+  | "bottom"        { BOTTOM }
+  | "undefined"     { UNDEFINED }
   | "unit"          { UNIT }
   | "->"            { SINGLE_ARROW }
   | "=>"            { DOUBLE_ARROW }

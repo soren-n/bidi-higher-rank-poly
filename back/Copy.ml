@@ -63,7 +63,7 @@ let copy_poly poly return =
 
 let rec copy_expr expr return =
   match expr with
-  | EBot -> return expr_bot
+  | EUndefined -> return expr_undefined
   | EUnit -> return expr_unit
   | EVar name -> return (expr_var name)
   | EAbs (param, body) ->

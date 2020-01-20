@@ -218,7 +218,7 @@ let subtype left right ctx fail return =
 
 let rec synth expr ctx fail return =
   match expr with
-  | EBot -> return poly_bot
+  | EUndefined -> return poly_bot
   | EUnit -> return poly_unit
   | EVar name -> lookup_v name ctx fail return
   | EAbs (param, body) ->

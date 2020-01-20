@@ -9,12 +9,12 @@ let rec _gen_expr n ctx ps =
   let _gen_expr_term =
     if (List.length ps) <= 0 then
       frequency
-      [ 1, return expr_bot
+      [ 1, return expr_undefined
       ; 2, return expr_unit
       ]
     else
       frequency
-      [ 1, return expr_bot
+      [ 1, return expr_undefined
       ; 2, return expr_unit
       ; 2, map expr_var (oneofl ps)
       ]
@@ -45,7 +45,7 @@ let print_expr ctx expr =
 let rec shrink_expr expr =
   let open QCheck.Iter in
   match expr with
-  | EBot -> empty
+  | EUndefined -> empty
   | EUnit -> empty
   | EVar _name -> empty
   | EAbs (param, body) ->
@@ -87,7 +87,7 @@ let _synth_expr_lookup simple env fail return =
 let rec _synth_expr n ctx env simple_mono =
   let open QCheck.Gen in
   match simple_mono with
-  | SMBot -> return expr_bot
+  | SMBot -> return expr_undefined
   | SMProper proper_simple_mono ->
     _synth_expr_proper n ctx env proper_simple_mono
 and _synth_expr_proper n ctx env proper_simple_mono =

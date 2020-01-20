@@ -5,7 +5,8 @@
 
 %token SINGLE_ARROW
 %token DOUBLE_ARROW
-%token BOT
+%token BOTTOM
+%token UNDEFINED
 %token UNIT
 %token <Back.Syntax.label> LABEL
 %token LPAREN RPAREN
@@ -29,10 +30,14 @@ input:
     { e }
 
 expr:
-  | x = LABEL DOUBLE_ARROW e = expr
-    { expr_abs x e }
-  | e = expr_app COLON p = poly
+  | e = expr_prime COLON p = poly
     { expr_anno e p }
+  | e = expr_prime
+    { e }
+
+expr_prime:
+  | x = LABEL DOUBLE_ARROW e = expr_prime
+    { expr_abs x e }
   | e = expr_app
     { e }
 
@@ -43,8 +48,8 @@ expr_app:
     { expr_app f a }
 
 expr_simple:
-  | BOT
-    { expr_bot }
+  | UNDEFINED
+    { expr_undefined }
   | UNIT
     { expr_unit }
   | x = LABEL
@@ -61,6 +66,8 @@ poly:
     { t }
 
 poly_simple:
+  | BOTTOM
+    { poly_bot }
   | UNIT
     { poly_unit }
   | x = LABEL
