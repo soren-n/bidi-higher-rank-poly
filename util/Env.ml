@@ -14,7 +14,7 @@ let from_list binds =
 let fold empty_case bind_case env =
   let rec _visit env return =
     match env with
-    | [] -> empty_case
+    | [] -> return empty_case
     | (key, value) :: env1 ->
       _visit env1 @@ fun result ->
       return (bind_case key value result)
