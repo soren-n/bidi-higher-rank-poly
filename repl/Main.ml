@@ -28,11 +28,14 @@ let parse parser tokens =
     Result.make_error "Parsing error"
 
 let parse_file path =
-  let file_in = open_in path in
-  let tokens = Lexing.from_channel file_in in
-  let result = parse Parser.file tokens in
-  close_in file_in;
-  result
+  try
+    let file_in = open_in path in
+    let tokens = Lexing.from_channel file_in in
+    let result = parse Parser.file tokens in
+    close_in file_in;
+    result
+  with Sys_error msg ->
+    Result.make_error msg
 
 let parse_input input =
   parse Parser.input (Lexing.from_string input)
