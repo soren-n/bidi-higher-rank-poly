@@ -85,13 +85,13 @@ let read_input () =
   let result = !input in
   String.sub result 0 (String.length result - 2)
 
-let report_context ctx =
-  let gen = Naming.make_ctx () in
-  Context.get_venv ctx @@ fun venv ->
+let report_context tctx =
+  let ctx = Naming.make_ctx () in
+  Context.get_venv tctx @@ fun venv ->
   Env.fold
     (fun return -> return "")
     (fun name poly visit_env return ->
-      Print.print_poly gen poly @@ fun poly_s ->
+      Print.print_poly ctx poly @@ fun poly_s ->
       visit_env @@ fun binds ->
       return (sprintf "%s : %s\n%s" name poly_s binds))
     venv report

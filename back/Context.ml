@@ -48,8 +48,8 @@ let bound_t label ctx fail return =
     (fun () -> fail (sprintf "Unknown type parameter \"%s\"" label))
     return
 
-let print gen ctx return =
+let print ctx tctx return =
   let _id x k = k x in
-  Env.print _id (Print.print_poly gen) ctx.venv @@ fun venv1 ->
-  Env.print _id (Print.print_poly gen) ctx.tenv @@ fun tenv1 ->
+  Env.print _id (Print.print_poly ctx) tctx.venv @@ fun venv1 ->
+  Env.print _id (Print.print_poly ctx) tctx.tenv @@ fun tenv1 ->
   return (sprintf "%s\n%s" venv1 tenv1)
