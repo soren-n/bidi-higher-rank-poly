@@ -13,7 +13,7 @@ dune build test   (Build the tests)
 rlwrap ./_build/default/repl/Main.exe
 > exit;;          (Exit the REPL)
 > context;;       (Print the current context)
-> x => x;;        (Evaluate a input term and print it's result)
+> x => x;;        (Evaluate an input term and print its result)
 ```
 
 # Running the tests
