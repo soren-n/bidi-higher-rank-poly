@@ -15,7 +15,7 @@ let _print_mono ctx env mono group return =
         let _env = !env in
         Env.lookup exist_equal exist _env
           (fun () ->
-            Naming.sample_label ctx @@ fun label ->
+            Naming.sample_exist ctx @@ fun label ->
             Env.bind exist label _env @@ fun env1 ->
             env := env1;
             return label)
@@ -47,7 +47,7 @@ let _print_poly ctx env poly group return =
         let _env = !env in
         Env.lookup exist_equal exist _env
           (fun () ->
-            Naming.sample_label ctx @@ fun label ->
+            Naming.sample_exist ctx @@ fun label ->
             Env.bind exist label _env @@ fun env1 ->
             env := env1;
             return label)
