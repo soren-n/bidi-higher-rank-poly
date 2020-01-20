@@ -250,9 +250,6 @@ and synth_apply poly expr ctx fail return =
   | PForall (param, poly1) ->
     extend param ctx @@ fun ctx1 ->
     synth_apply poly1 expr ctx1 fail return
-  | PMono mono ->
-    mono_poly mono @@ fun poly1 ->
-    synth_apply poly1 expr ctx fail return
   | _ -> assert false
 and check expr poly ctx fail return =
   match expr, poly with
@@ -262,23 +259,8 @@ and check expr poly ctx fail return =
     check body codom ctx1 fail return
   | _, PForall (_param, poly1) ->
     check expr poly1 ctx fail return
-  | _, PMono mono ->
-    check_mono expr mono ctx fail return
   | _, _ ->
     synth expr ctx fail @@ fun expr_t ->
     norm_poly expr_t @@ fun expr_t1 ->
     norm_poly poly @@ fun poly1 ->
     subtype expr_t1 poly1 ctx fail return
-and check_mono expr mono ctx fail return =
-  match expr, mono with
-  | EBot, _ -> return ()
-  | EUnit, MUnit -> return ()
-  | EAbs (param, body), MArrow (dom, codom) ->
-    bind_v param (poly_mono dom) ctx @@ fun ctx1 ->
-    check_mono body codom ctx1 fail return
-  | _, _ ->
-    synth expr ctx fail @@ fun expr_t ->
-    norm_poly expr_t @@ fun expr_t1 ->
-    norm_mono mono @@ fun mono1 ->
-    mono_poly mono1 @@ fun poly ->
-    subtype expr_t1 poly ctx fail return
