@@ -7,6 +7,16 @@ let empty = []
 let add item set return =
   return (item :: set)
 
+let fold empty_case item_case items =
+  let rec _visit items return =
+    match items with
+    | [] -> return empty_case
+    | item :: items1 ->
+      _visit items1 @@ fun result ->
+      return (item_case item result)
+  in
+  _visit items (fun x -> x)
+
 let member equal item set fail return =
   let rec _visit set =
     match set with
