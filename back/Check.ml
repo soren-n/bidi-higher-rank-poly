@@ -5,7 +5,7 @@ open Print
 
 let rec norm_poly poly return =
   match poly with
-  | PBot -> return poly_bot
+  | PNothing -> return poly_nothing
   | PUnit -> return poly_unit
   | PParam name -> return (poly_param name)
   | PVar exist ->
@@ -27,7 +27,7 @@ let rec norm_poly poly return =
     return (poly_mono mono1)
 and norm_mono mono return =
   match mono with
-  | MBot -> return mono_bot
+  | MNothing -> return mono_nothing
   | MUnit -> return mono_unit
   | MParam name -> return (mono_param name)
   | MVar exist ->
@@ -47,8 +47,8 @@ let extend label ctx return =
 
 let rec instantiate_l l_exist poly ctx fail return =
   match poly with
-  | PBot ->
-    l_exist := Some MBot;
+  | PNothing ->
+    l_exist := Some MNothing;
     return ()
   | PUnit ->
     l_exist := Some MUnit;
@@ -80,8 +80,8 @@ let rec instantiate_l l_exist poly ctx fail return =
     return ()
 and instantiate_r poly r_exist ctx fail return =
   match poly with
-  | PBot ->
-    r_exist := Some MBot;
+  | PNothing ->
+    r_exist := Some MNothing;
     return ()
   | PUnit ->
     r_exist := Some MUnit;
@@ -129,7 +129,7 @@ let rec acyclic_poly l_exist r_poly fail return =
       _visit poly1 return
     | PMono mono ->
       acyclic_mono l_exist mono fail return
-    | PBot | PUnit | PParam _ -> return ()
+    | PNothing | PUnit | PParam _ -> return ()
   in
   _visit r_poly return
 and acyclic_mono l_exist r_mono fail return =
@@ -145,13 +145,13 @@ and acyclic_mono l_exist r_mono fail return =
     | MArrow (dom, codom) ->
       _visit dom @@ fun () ->
       _visit codom return
-    | MBot | MUnit | MParam _ -> return ()
+    | MNothing | MUnit | MParam _ -> return ()
   in
   _visit r_mono return
 
 let rec mono_poly mono return =
   match mono with
-  | MBot -> return poly_bot
+  | MNothing -> return poly_nothing
   | MUnit -> return poly_unit
   | MParam label -> return (poly_param label)
   | MVar exist -> return (poly_var exist)
@@ -177,7 +177,7 @@ let subtype left right ctx fail return =
     let _fail = _fail_end fail left right in
     let __fail = _fail_cont fail left right in
     match left, right with
-    | PBot, PBot -> return ()
+    | PNothing, PNothing -> return ()
     | PUnit, PUnit -> return ()
     | PParam left1, PParam right1 ->
       if label_equal left1 right1 then return ()
@@ -218,7 +218,7 @@ let subtype left right ctx fail return =
 
 let rec synth expr ctx fail return =
   match expr with
-  | EUndefined -> return poly_bot
+  | EUndefined -> return poly_nothing
   | EUnit -> return poly_unit
   | EVar name -> lookup_v name ctx fail return
   | EAbs (param, body) ->

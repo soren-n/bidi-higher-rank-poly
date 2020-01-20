@@ -3,7 +3,7 @@ type label = string
 let label_equal l r = l = r
 
 type mono =
-  | MBot
+  | MNothing
   | MUnit
   | MParam of label
   | MVar of exist
@@ -12,14 +12,14 @@ and exist = mono option ref
 
 let exist_equal l r = l == r
 
-let mono_bot = MBot
+let mono_nothing = MNothing
 let mono_unit = MUnit
 let mono_param label = MParam label
 let mono_var exist = MVar exist
 let mono_arrow dom codom = MArrow (dom, codom)
 
 type poly =
-  | PBot
+  | PNothing
   | PUnit
   | PParam of label
   | PVar of exist
@@ -27,7 +27,7 @@ type poly =
   | PForall of label * poly
   | PMono of mono
 
-let poly_bot = PBot
+let poly_nothing = PNothing
 let poly_unit = PUnit
 let poly_param name = PParam name
 let poly_var exist = PVar exist

@@ -61,7 +61,7 @@ let print_poly ctx poly =
 let rec shrink_poly poly =
   let open QCheck.Iter in
   match poly with
-  | PBot -> empty
+  | PNothing -> empty
   | PUnit -> empty
   | PParam _name -> empty
   | PVar exist ->
@@ -86,7 +86,7 @@ let arbitrary_poly ctx =
 (* Convert *)
 let rec simple_mono_poly simple_mono return =
   match simple_mono with
-  | SMBot -> return poly_bot
+  | SMNothing -> return poly_nothing
   | SMProper proper_simple_mono ->
     let env = ref Env.empty in
     _proper_simple_mono_poly env proper_simple_mono return

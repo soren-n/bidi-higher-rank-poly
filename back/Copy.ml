@@ -3,7 +3,7 @@ open Syntax
 
 let rec _copy_mono mono env return =
   match mono with
-  | MBot -> return mono_bot env
+  | MNothing -> return mono_nothing env
   | MUnit -> return mono_unit env
   | MParam name -> return (mono_param name) env
   | MVar from_exist ->
@@ -30,7 +30,7 @@ let copy_mono mono return =
 
 let rec _copy_poly poly env return =
   match poly with
-  | PBot -> return poly_bot env
+  | PNothing -> return poly_nothing env
   | PUnit -> return poly_unit env
   | PParam name -> return (poly_param name) env
   | PVar from_exist ->

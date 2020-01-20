@@ -8,7 +8,7 @@ let _check_mono mono tenv fail return =
   in
   let rec _visit mono return =
     match mono with
-    | MBot -> return ()
+    | MNothing -> return ()
     | MUnit -> return ()
     | MParam name ->
       Set.member label_equal name tenv (_fail name) return
@@ -34,7 +34,7 @@ let _check_poly poly tenv fail return =
   in
   let rec _visit poly tenv return =
     match poly with
-    | PBot -> return ()
+    | PNothing -> return ()
     | PUnit -> return ()
     | PParam name ->
       Set.member label_equal name tenv (_fail name) return

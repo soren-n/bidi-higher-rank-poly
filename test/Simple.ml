@@ -1,11 +1,11 @@
 type simple =
-  | SBot
+  | SNothing
   | SProper of proper_simple
 and proper_simple =
   | SUnit
   | SArrow of proper_simple * proper_simple
 
-let simple_bot = SBot
+let simple_nothing = SNothing
 let simple_proper simple = SProper simple
 let proper_simple_unit = SUnit
 let proper_simple_arrow dom codom = SArrow (dom, codom)
@@ -24,7 +24,7 @@ let proper_simple_equal left right =
 
 let simple_equal left right =
   match left, right with
-  | SBot, SBot -> true
+  | SNothing, SNothing -> true
   | SProper left1, SProper right1 ->
     proper_simple_equal left1 right1
   | _, _ -> false
@@ -46,14 +46,14 @@ let gen_proper_simple =
   nat >>= fun n ->
   _gen_proper_simple n
 
-exception Bottom
+exception Nothing
 
 let rec _gen_simple n =
   let open QCheck.Gen in
-  let _gen_simple_bot _st = raise Bottom in
+  let _gen_simple_nothing _st = raise Nothing in
   let _gen_simple_term =
     frequency
-    [ 1, _gen_simple_bot
+    [ 1, _gen_simple_nothing
     ; 2, return proper_simple_unit
     ]
   in
@@ -69,7 +69,7 @@ let rec _gen_simple n =
 
 let _gen_simple_wrap n st =
   try simple_proper (_gen_simple n st)
-  with Bottom -> simple_bot
+  with Nothing -> simple_nothing
 
 let gen_simple =
   let open QCheck.Gen in
@@ -78,7 +78,7 @@ let gen_simple =
 
 let rec _print_simple simple return =
   match simple with
-  | SBot -> return "⊥"
+  | SNothing -> return "⊥"
   | SProper proper_simple ->
     _print_proper_simple proper_simple false return
 and _print_proper_simple proper_simple group return =
@@ -101,7 +101,7 @@ let print_proper_simple proper_simple =
 let rec shrink_simple simple =
   let open QCheck.Iter in
   match simple with
-  | SBot -> empty
+  | SNothing -> empty
   | SProper proper_simple ->
     shrink_proper_simple proper_simple >|= simple_proper
 and shrink_proper_simple proper_simple =

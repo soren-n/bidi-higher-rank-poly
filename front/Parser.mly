@@ -67,7 +67,7 @@ poly:
 
 poly_simple:
   | NOTHING
-    { poly_bot }
+    { poly_nothing }
   | UNIT
     { poly_unit }
   | x = LABEL

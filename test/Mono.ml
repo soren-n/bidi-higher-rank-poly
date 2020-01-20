@@ -54,7 +54,7 @@ let print_mono ctx mono =
 let rec shrink_mono mono =
   let open QCheck.Iter in
   match mono with
-  | MBot -> empty
+  | MNothing -> empty
   | MUnit -> empty
   | MParam _name -> empty
   | MVar exist ->
@@ -74,7 +74,7 @@ let arbitrary_mono ctx =
 
 (* Simple mono *)
 type simple_mono =
-  | SMBot
+  | SMNothing
   | SMProper of proper_simple_mono
 and proper_simple_mono =
   | SMUnit
@@ -83,7 +83,7 @@ and proper_simple_mono =
 and exist =
   proper_simple_mono option ref
 
-let simple_mono_bot = SMBot
+let simple_mono_nothing = SMNothing
 let simple_mono_proper proper_simple_mono = SMProper proper_simple_mono
 let proper_simple_mono_unit = SMUnit
 let proper_simple_mono_var exist = SMVar exist
@@ -114,7 +114,7 @@ let proper_simple_mono_equal left right =
 
 let simple_mono_equal left right =
   match left, right with
-  | SMBot, SMBot -> true
+  | SMNothing, SMNothing -> true
   | SMProper left1, SMProper right1 ->
     proper_simple_mono_equal left1 right1
   | _, _ -> false
@@ -147,7 +147,7 @@ let _proper_simple_convert proper_simple return =
 let rec _gen_simple_mono simple vs =
   let open QCheck.Gen in
   match simple with
-  | SBot -> return simple_mono_bot
+  | SNothing -> return simple_mono_nothing
   | SProper proper_simple ->
     _gen_proper_simple_mono proper_simple vs >|= fun proper_simple_mono ->
     simple_mono_proper proper_simple_mono
@@ -196,7 +196,7 @@ let gen_simple_mono =
 
 let rec _print_simple_mono ctx env simple_mono return =
   match simple_mono with
-  | SMBot -> return "⊥"
+  | SMNothing -> return "⊥"
   | SMProper proper_simple_mono ->
     _print_proper_simple_mono ctx env proper_simple_mono false return
 and _print_proper_simple_mono ctx env proper_simple_mono group return =
@@ -231,7 +231,7 @@ let print_proper_simple_mono ctx proper_simple_mono =
 let rec shrink_simple_mono simple_mono =
   let open QCheck.Iter in
   match simple_mono with
-  | SMBot -> empty
+  | SMNothing -> empty
   | SMProper proper_simple_mono ->
     shrink_proper_simple_mono proper_simple_mono >|= simple_mono_proper
 and shrink_proper_simple_mono proper_simple_mono =
@@ -303,7 +303,7 @@ let print_mono mono =
 let rec shrink_mono mono =
   let open QCheck.Iter in
   match mono with
-  | MBot -> empty
+  | MNothing -> empty
   | MUnit -> empty
   | MParam _name -> empty
   | MVar exist ->

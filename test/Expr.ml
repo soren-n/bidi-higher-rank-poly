@@ -87,7 +87,7 @@ let _synth_expr_lookup simple env fail return =
 let rec _synth_expr n ctx env simple_mono =
   let open QCheck.Gen in
   match simple_mono with
-  | SMBot -> return expr_undefined
+  | SMNothing -> return expr_undefined
   | SMProper proper_simple_mono ->
     _synth_expr_proper n ctx env proper_simple_mono
 and _synth_expr_proper n ctx env proper_simple_mono =

@@ -5,7 +5,7 @@ open Copy
 let _print_mono ctx mono group return =
   let rec _visit mono group return =
     match mono with
-    | MBot -> return "⊥"
+    | MNothing -> return "⊥"
     | MUnit -> return "unit"
     | MParam name -> return name
     | MVar exist ->
@@ -32,7 +32,7 @@ let print_mono ctx mono return =
 let _print_poly ctx poly group return =
   let rec _visit poly group return =
     match poly with
-    | PBot -> return "⊥"
+    | PNothing -> return "⊥"
     | PUnit -> return "unit"
     | PParam name -> return name
     | PVar exist ->
