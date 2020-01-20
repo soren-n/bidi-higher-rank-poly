@@ -8,6 +8,7 @@ let _check_mono mono tenv fail return =
   in
   let rec _visit mono return =
     match mono with
+    | MBot -> return ()
     | MUnit -> return ()
     | MParam name ->
       Set.member label_equal name tenv (_fail name) return
@@ -33,6 +34,7 @@ let _check_poly poly tenv fail return =
   in
   let rec _visit poly tenv return =
     match poly with
+    | PBot -> return ()
     | PUnit -> return ()
     | PParam name ->
       Set.member label_equal name tenv (_fail name) return
@@ -63,6 +65,7 @@ let _check_expr expr tenv venv fail return =
   in
   let rec _visit expr venv return =
     match expr with
+    | EBot -> return ()
     | EUnit -> return ()
     | EVar name ->
       Set.member label_equal name venv (_fail name) return

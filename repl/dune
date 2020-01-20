@@ -1,0 +1,7 @@
+(executable
+  (name Main)
+  (libraries Util Back Front))
+
+(install
+  (section bin)
+  (files (Main.exe as BHRP)))

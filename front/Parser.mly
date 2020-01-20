@@ -1,21 +1,22 @@
 %{
-  open Bin
+  open Back
   open Syntax
 %}
 
 %token SINGLE_ARROW
 %token DOUBLE_ARROW
+%token BOT
 %token UNIT
-%token <Bin.Syntax.label> LABEL
+%token <Back.Syntax.label> LABEL
 %token LPAREN RPAREN
 %token COLON
 %token EOF
 
 %start file
-%type <Bin.Syntax.expr> file
+%type <Back.Syntax.expr> file
 
 %start input
-%type <Bin.Syntax.expr> input
+%type <Back.Syntax.expr> input
 
 %%
 
@@ -42,6 +43,8 @@ expr_app:
     { expr_app f a }
 
 expr_simple:
+  | BOT
+    { expr_bot }
   | UNIT
     { expr_unit }
   | x = LABEL

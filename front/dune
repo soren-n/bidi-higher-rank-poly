@@ -1,0 +1,10 @@
+(ocamllex
+  (modules Lexer))
+
+(menhir
+  (flags --explain)
+  (modules Parser))
+
+(library
+  (name Front)
+  (libraries Util Back))

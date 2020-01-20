@@ -2,17 +2,17 @@ open Printf
 open Syntax
 open Copy
 
-let _print_mono mono group ctx return =
+let _print_mono ctx mono group return =
   let rec _visit mono group return =
     match mono with
+    | MBot -> return "⊥"
     | MUnit -> return "unit"
     | MParam name -> return name
     | MVar exist ->
       begin match !exist with
       | Some mono1 -> _visit mono1 group return
       | None ->
-        let name_gen = Gen.make_exist ctx in
-        let name = Gen.sample_var name_gen in
+        Naming.sample_exist ctx @@ fun name ->
         exist := Some (mono_param name);
         return name
       end
@@ -25,22 +25,21 @@ let _print_mono mono group ctx return =
   in
   _visit mono group return
 
-let print_mono mono return =
-  let ctx = Gen.make_gen () in
+let print_mono ctx mono return =
   copy_mono mono @@ fun mono1 ->
-  _print_mono mono1 false ctx return
+  _print_mono ctx mono1 false return
 
-let _print_poly poly group ctx return =
+let _print_poly ctx poly group return =
   let rec _visit poly group return =
     match poly with
+    | PBot -> return "⊥"
     | PUnit -> return "unit"
     | PParam name -> return name
     | PVar exist ->
       begin match !exist with
-      | Some mono1 -> _print_mono mono1 group ctx return
+      | Some mono1 -> _print_mono ctx mono1 group return
       | None ->
-        let name_gen = Gen.make_exist ctx in
-        let name = Gen.sample_var name_gen in
+        Naming.sample_exist ctx @@ fun name ->
         exist := Some (mono_param name);
         return name
       end
@@ -56,36 +55,39 @@ let _print_poly poly group ctx return =
       then return (sprintf "(∀%s.%s)" param poly2)
       else return (sprintf "∀%s.%s" param poly2)
     | PMono mono ->
-      _print_mono mono group ctx return
+      _print_mono ctx mono group return
   in
   _visit poly group return
 
-let print_poly poly return =
-  let ctx = Gen.make_gen () in
+let print_poly ctx poly return =
   copy_poly poly @@ fun poly1 ->
-  _print_poly poly1 false ctx return
+  _print_poly ctx poly1 false return
 
-let rec _print_expr expr group return =
-  match expr with
-  | EUnit -> return "unit"
-  | EVar name -> return name
-  | EAbs (param, body) ->
-    _print_expr body false @@ fun body1 ->
-    if group
-    then return (sprintf "(%s => %s)" param body1)
-    else return (sprintf "%s => %s" param body1)
-  | EApp (func, arg) ->
-    _print_expr func true @@ fun func1 ->
-    _print_expr arg false @@ fun arg1 ->
-    if group
-    then return (sprintf "(%s %s)" func1 arg1)
-    else return (sprintf "%s %s" func1 arg1)
-  | EAnno (expr1, poly) ->
-    _print_expr expr1 true @@ fun expr2 ->
-    print_poly poly @@ fun poly1 ->
-    if group
-    then return (sprintf "(%s : %s)" expr2 poly1)
-    else return (sprintf "%s : %s" expr2 poly1)
+let _print_expr ctx expr group return =
+  let rec _print expr group return =
+    match expr with
+    | EBot -> return "undefined"
+    | EUnit -> return "unit"
+    | EVar name -> return name
+    | EAbs (param, body) ->
+      _print body false @@ fun body1 ->
+      if group
+      then return (sprintf "(%s => %s)" param body1)
+      else return (sprintf "%s => %s" param body1)
+    | EApp (func, arg) ->
+      _print func true @@ fun func1 ->
+      _print arg false @@ fun arg1 ->
+      if group
+      then return (sprintf "(%s %s)" func1 arg1)
+      else return (sprintf "%s %s" func1 arg1)
+    | EAnno (expr1, poly) ->
+      _print expr1 true @@ fun expr2 ->
+      print_poly ctx poly @@ fun poly1 ->
+      if group
+      then return (sprintf "(%s : %s)" expr2 poly1)
+      else return (sprintf "%s : %s" expr2 poly1)
+  in
+  _print expr group return
 
-let print_expr expr return =
-  _print_expr expr false return
+let print_expr ctx expr return =
+  _print_expr ctx expr false return

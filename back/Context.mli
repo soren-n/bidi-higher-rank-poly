@@ -11,4 +11,4 @@ val lookup_v : label -> ctx -> (string -> 'a) -> (poly -> 'a) -> 'a
 val lookup_t : label -> ctx -> (string -> 'a) -> (poly -> 'a) -> 'a
 val bound_v : label -> ctx -> (string -> 'a) -> (unit -> 'a) -> 'a
 val bound_t : label -> ctx -> (string -> 'a) -> (unit -> 'a) -> 'a
-val print : ctx -> (string -> 'a) -> 'a
+val print : Naming.ctx -> ctx -> (string -> 'a) -> 'a

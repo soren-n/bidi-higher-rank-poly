@@ -30,7 +30,7 @@ let bind_t label poly ctx return =
 
 let lookup_v label ctx fail return =
   Env.lookup label_equal label ctx.venv
-    (fun () -> fail (sprintf "Unknown value parameter \"%s\"" label))
+    (fun () -> fail (sprintf "Unknown program parameter \"%s\"" label))
     return
 
 let lookup_t label ctx fail return =
@@ -40,7 +40,7 @@ let lookup_t label ctx fail return =
 
 let bound_v label ctx fail return =
   Env.bound label_equal label ctx.venv
-    (fun () -> fail (sprintf "Unknown value parameter \"%s\"" label))
+    (fun () -> fail (sprintf "Unknown program parameter \"%s\"" label))
     return
 
 let bound_t label ctx fail return =
@@ -48,8 +48,8 @@ let bound_t label ctx fail return =
     (fun () -> fail (sprintf "Unknown type parameter \"%s\"" label))
     return
 
-let print ctx return =
+let print gen ctx return =
   let _id x k = k x in
-  Env.print _id Print.print_poly ctx.venv @@ fun venv1 ->
-  Env.print _id Print.print_poly ctx.tenv @@ fun tenv1 ->
+  Env.print _id (Print.print_poly gen) ctx.venv @@ fun venv1 ->
+  Env.print _id (Print.print_poly gen) ctx.tenv @@ fun tenv1 ->
   return (sprintf "%s\n%s" venv1 tenv1)

@@ -3,10 +3,10 @@ open Util.Extra
 
 type gen = int ref
 let make_gen () = ref 0
-let sample_gen gen =
+let sample gen =
   let result = !gen in
   gen := result + 1;
-  result
+  abs result
 
 let digits =
   [|"\u{2080}"; "\u{2081}"; "\u{2082}"; "\u{2083}"; "\u{2084}"
@@ -24,27 +24,24 @@ let alphabet =
   ; 'o'; 'p'; 'q'; 'r'; 's'; 't'; 'u'
   ; 'v'; 'w'; 'x'; 'y'; 'z' |]
 
-let name n suffix =
-  String.fold ""
-    (fun c ->
-      sprintf "%c%s%s" alphabet.((int_of_char c) - 48) suffix)
-    (string_of_int (abs n))
-
-type var =
-  { c : string
-  ; i : gen
+type ctx =
+  { label : gen
+  ; exist : gen
   }
 
-let make_param gen =
-  { c = name (sample_gen gen) ""
-  ; i = make_gen ()
+let make_ctx () =
+  { label = make_gen ()
+  ; exist = make_gen ()
   }
 
-let make_exist gen =
-  let hat = "\u{0302}" in
-  { c = name (sample_gen gen) hat
-  ; i = make_gen ()
-  }
+let sample_label ctx return =
+  let _n = sample ctx.label in
+  let a = _n mod 26 in
+  let i = _n / 26 in
+  return (sprintf "%c%s" alphabet.(a) (subscript i))
 
-let sample_var var =
-  String.conc var.c (subscript (sample_gen var.i))
+let sample_exist ctx return =
+  let n = sample ctx.exist in
+  let a = n mod 26 in
+  let i = n / 26 in
+  return (sprintf "%c\u{0302}%s" alphabet.(a) (subscript i))

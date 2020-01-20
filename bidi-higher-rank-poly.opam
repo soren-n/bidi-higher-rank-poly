@@ -10,4 +10,5 @@ build: [
 ]
 depends: [
   "dune" {>= "2.0"}
+  "qcheck" {>= "0.12"}
 ]

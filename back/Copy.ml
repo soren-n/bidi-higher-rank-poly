@@ -3,6 +3,7 @@ open Syntax
 
 let rec _copy_mono mono env return =
   match mono with
+  | MBot -> return mono_bot env
   | MUnit -> return mono_unit env
   | MParam name -> return (mono_param name) env
   | MVar from_exist ->
@@ -29,6 +30,7 @@ let copy_mono mono return =
 
 let rec _copy_poly poly env return =
   match poly with
+  | PBot -> return poly_bot env
   | PUnit -> return poly_unit env
   | PParam name -> return (poly_param name) env
   | PVar from_exist ->
@@ -58,3 +60,20 @@ let rec _copy_poly poly env return =
 let copy_poly poly return =
   _copy_poly poly Env.empty @@ fun result _env1 ->
   return result
+
+let rec copy_expr expr return =
+  match expr with
+  | EBot -> return expr_bot
+  | EUnit -> return expr_unit
+  | EVar name -> return (expr_var name)
+  | EAbs (param, body) ->
+    copy_expr body @@ fun body1 ->
+    return (expr_abs param body1)
+  | EApp (func, arg) ->
+    copy_expr func @@ fun func1 ->
+    copy_expr arg @@ fun arg1 ->
+    return (expr_app func1 arg1)
+  | EAnno (expr1, poly) ->
+    copy_expr expr1 @@ fun expr2 ->
+    copy_poly poly @@ fun poly1 ->
+    return (expr_anno expr2 poly1)
