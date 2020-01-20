@@ -1,4 +1,6 @@
 open Printf
+open Util
+open Extra
 open Syntax
 open Context
 open Print
@@ -264,3 +266,74 @@ and check expr poly ctx fail return =
     norm_poly expr_t @@ fun expr_t1 ->
     norm_poly poly @@ fun poly1 ->
     subtype expr_t1 poly1 ctx fail return
+
+let generalize poly return =
+  let ctx = Naming.make_ctx () in
+  let exists = ref Env.empty in
+  let rec _visit_poly poly env return =
+    match poly with
+    | PParam from_label ->
+      Env.lookup label_equal from_label env
+        (fun () -> assert false)
+        (fun to_label ->
+          return (poly_param to_label))
+    | PVar exist ->
+      begin match !exist with
+      | Some mono ->
+        _visit_mono mono env @@ fun mono1 ->
+        return (poly_mono mono1)
+      | None ->
+        let _exists = !exists in
+        Env.lookup exist_equal exist _exists
+          (fun () ->
+            Naming.sample_label ctx @@ fun label ->
+            Env.bind exist label _exists @@ fun exists1 ->
+            exists := exists1;
+            return (poly_param label))
+          (fun label ->
+            return (poly_param label))
+      end
+    | PArrow (dom, codom) ->
+      _visit_poly dom env @@ fun dom1 ->
+      _visit_poly codom env @@ fun codom1 ->
+      return (poly_arrow dom1 codom1)
+    | PForall (from_label, poly1) ->
+      Naming.sample_label ctx @@ fun to_label ->
+      Env.bind from_label to_label env @@ fun env1 ->
+      _visit_poly poly1 env1 @@ fun poly2 ->
+      return (poly_forall to_label poly2)
+    | PMono mono ->
+      _visit_mono mono env @@ fun mono1 ->
+      return (poly_mono mono1)
+    | PNothing | PUnit -> return poly
+  and _visit_mono mono env return =
+    match mono with
+    | MParam from_label ->
+      Env.lookup label_equal from_label env
+        (fun () -> assert false)
+        (fun to_label ->
+          return (mono_param to_label))
+    | MVar exist ->
+      begin match !exist with
+      | Some mono ->
+        _visit_mono mono env return
+      | None ->
+        let _exists = !exists in
+        Env.lookup exist_equal exist _exists
+          (fun () ->
+            Naming.sample_label ctx @@ fun label ->
+            Env.bind exist label _exists @@ fun exists1 ->
+            exists := exists1;
+            return (mono_param label))
+          (fun label ->
+            return (mono_param label))
+      end
+    | MArrow (dom, codom) ->
+      _visit_mono dom env @@ fun dom1 ->
+      _visit_mono codom env @@ fun codom1 ->
+      return (mono_arrow dom1 codom1)
+    | MNothing | MUnit -> return mono
+  in
+  _visit_poly poly Env.empty @@ fun poly1 ->
+  Env.values !exists @@ fun labels ->
+  return (List.fold_rev poly1 poly_forall labels)

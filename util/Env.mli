@@ -28,6 +28,11 @@ val keys :
   ('key Set.set -> 'result) ->
   'result
 
+val values :
+  ('key, 'value) env ->
+  ('value list -> 'result) ->
+  'result
+
 val print :
   ('key -> (string -> 'a) -> 'a) ->
   ('value -> (string -> 'a) -> 'a) ->

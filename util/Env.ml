@@ -54,6 +54,14 @@ let keys env return =
       Set.add key keys return)
     env return
 
+let values env return =
+  fold
+    (fun return -> return [])
+    (fun _key value visit_env return ->
+      visit_env @@ fun values ->
+      return (value :: values))
+    env return
+
 let print print_key print_value env return =
   let open Printf in
   let _cont k x y xys = k ((sprintf "%s = %s" x y) :: xys) in

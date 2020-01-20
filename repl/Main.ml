@@ -13,8 +13,9 @@ let error msg =
 
 let success value poly =
   let ctx = Naming.make_ctx () in
+  Check.generalize poly @@ fun poly1 ->
   Interp.print_value value @@ fun value_s ->
-  Print.print_poly ctx poly @@ fun poly_s ->
+  Print.print_poly ctx poly1 @@ fun poly_s ->
   printf "%s : %s\n" value_s poly_s
 
 let parse parser tokens =
