@@ -1,8 +1,8 @@
 open Printf
+open Util
 open Syntax
-open Copy
 
-let _print_mono ctx mono group return =
+let _print_mono ctx env mono group return =
   let rec _visit mono group return =
     match mono with
     | MNothing -> return "⊥"
@@ -12,9 +12,14 @@ let _print_mono ctx mono group return =
       begin match !exist with
       | Some mono1 -> _visit mono1 group return
       | None ->
-        Naming.sample_exist ctx @@ fun name ->
-        exist := Some (mono_param name);
-        return name
+        let _env = !env in
+        Env.lookup exist_equal exist _env
+          (fun () ->
+            Naming.sample_label ctx @@ fun label ->
+            Env.bind exist label _env @@ fun env1 ->
+            env := env1;
+            return label)
+          return
       end
     | MArrow (dom, codom) ->
       _visit dom true @@ fun dom1 ->
@@ -26,10 +31,10 @@ let _print_mono ctx mono group return =
   _visit mono group return
 
 let print_mono ctx mono return =
-  copy_mono mono @@ fun mono1 ->
-  _print_mono ctx mono1 false return
+  let env = ref Env.empty in
+  _print_mono ctx env mono false return
 
-let _print_poly ctx poly group return =
+let _print_poly ctx env poly group return =
   let rec _visit poly group return =
     match poly with
     | PNothing -> return "⊥"
@@ -37,11 +42,16 @@ let _print_poly ctx poly group return =
     | PParam name -> return name
     | PVar exist ->
       begin match !exist with
-      | Some mono1 -> _print_mono ctx mono1 group return
+      | Some mono1 -> _print_mono ctx env mono1 group return
       | None ->
-        Naming.sample_exist ctx @@ fun name ->
-        exist := Some (mono_param name);
-        return name
+        let _env = !env in
+        Env.lookup exist_equal exist _env
+          (fun () ->
+            Naming.sample_label ctx @@ fun label ->
+            Env.bind exist label _env @@ fun env1 ->
+            env := env1;
+            return label)
+          return
       end
     | PArrow (dom, codom) ->
       _visit dom true @@ fun dom1 ->
@@ -55,13 +65,13 @@ let _print_poly ctx poly group return =
       then return (sprintf "(∀%s.%s)" param poly2)
       else return (sprintf "∀%s.%s" param poly2)
     | PMono mono ->
-      _print_mono ctx mono group return
+      _print_mono ctx env mono group return
   in
   _visit poly group return
 
 let print_poly ctx poly return =
-  copy_poly poly @@ fun poly1 ->
-  _print_poly ctx poly1 false return
+  let env = ref Env.empty in
+  _print_poly ctx env poly false return
 
 let _print_expr ctx expr group return =
   let rec _print expr group return =
