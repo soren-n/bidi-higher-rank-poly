@@ -177,7 +177,7 @@ let subtype left right ctx fail return =
     let _fail = _fail_end fail left right in
     let __fail = _fail_cont fail left right in
     match left, right with
-    | PBot, _ -> return ()
+    | PBot, PBot -> return ()
     | PUnit, PUnit -> return ()
     | PParam left1, PParam right1 ->
       if label_equal left1 right1 then return ()
@@ -256,7 +256,6 @@ and synth_apply poly expr ctx fail return =
   | _ -> assert false
 and check expr poly ctx fail return =
   match expr, poly with
-  | EBot, _ -> return ()
   | EUnit, PUnit -> return ()
   | EAbs (param, body), PArrow (dom, codom) ->
     bind_v param dom ctx @@ fun ctx1 ->
