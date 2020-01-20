@@ -7,7 +7,7 @@ Added the empty program and type explicitly in order to have a better handle on 
 # Frontend syntax
 ```text
 // Type terms
-bottom            (Empty type)
+nothing           (Empty type)
 unit              (Singleton type)
 x                 (Variables)
 s -> t            (Arrow type)

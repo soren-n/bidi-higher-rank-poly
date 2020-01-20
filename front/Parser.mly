@@ -5,7 +5,7 @@
 
 %token SINGLE_ARROW
 %token DOUBLE_ARROW
-%token BOTTOM
+%token NOTHING
 %token UNDEFINED
 %token UNIT
 %token <Back.Syntax.label> LABEL
@@ -66,7 +66,7 @@ poly:
     { t }
 
 poly_simple:
-  | BOTTOM
+  | NOTHING
     { poly_bot }
   | UNIT
     { poly_unit }
