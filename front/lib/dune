@@ -1,0 +1,12 @@
+(ocamllex
+  (modules Lexer))
+
+(menhir
+  (flags --explain)
+  (modules Parser))
+
+(library
+  (name Front)
+  (public_name bhrp.front)
+  (libraries landmarks bhrp.util bhrp.back)
+  (instrumentation (backend bhrp.landmarks)))

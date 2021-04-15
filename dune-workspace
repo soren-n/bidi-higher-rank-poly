@@ -1,0 +1,8 @@
+(lang dune 2.8)
+(context default)
+(context
+  (default
+    (name profilling)
+    (instrument_with bhrp.landmarks)
+    (env (_ (env-vars
+      (OCAML_LANDMARKS "auto,format=json,output=profile.json"))))))

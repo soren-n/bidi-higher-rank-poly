@@ -1,0 +1,5 @@
+(library
+  (name landmarks_backend)
+  (public_name bhrp.landmarks)
+  (instrumentation.backend
+    (ppx landmarks.ppx)))
