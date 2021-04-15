@@ -4,7 +4,7 @@ Didactic implementation of the type checker described in "Complete and Easy Bidi
 # Notable detours from the paper
 Added the empty program and type explicitly in order to have a better handle on them during random program generation for testing. The reason is there are many different terms that represent the empty type in System F (e.g. ∀a.a), however in general it is undecidable whether a type term is inhabited or not. Therefore generating random polymorphic type terms is not very useful for testing, since some of them will represent the empty type and there is no way to tell. The chosen strategy for testing therefore became; generate random monomorphic type terms (these are always inhabited), generalise these type terms by randomly substituting their subterms with existential variables (the results are still inhabited, and should sometimes implicitly create polymorphic type terms); from these type terms generate random typed programs.
 
-# Testing
+# Testing strategy
 This project uses Property Based Testing through the QCheck module for OCaml. Code has been written that allows for the random generation of typed programs, and as well as type directed shrinking of said generated programs. This made it very easy to hone in on bugs in e.g. the type checker, type synthesis and interpreter.
 
 # Language feature additions
