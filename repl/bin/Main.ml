@@ -10,7 +10,7 @@ let print layout =
   print_endline msg
 
 let error msg =
-  print (~$"🔥 Error:" <+> msg </> null)
+  print (seq (~$"🔥 Error:" <+> grp msg) </> null)
 
 let success value poly =
   let ctx = Naming.make_ctx () in

@@ -234,7 +234,7 @@ let subtype left right tctx fail return =
     fail (_msg left right tctx)
   in
   let _fail_cont fail left right tctx msg =
-    fail ((_msg left right tctx) <!+> ~$"because" </> msg)
+    fail ((_msg left right tctx) </> ~$"because" <!+> msg)
   in
   let rec _subtype left right tctx fail return =
     let _fail = _fail_end fail left right tctx in
