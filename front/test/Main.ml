@@ -26,7 +26,7 @@ let (<==) expr poly =
 
 let interp expr return =
   Interp.eval_expr expr Native.venv @@ fun value ->
-  Interp.value_expr value return
+  Value.value_2_expr value return
 
 (* Define tests *)
 let interp_sound =
