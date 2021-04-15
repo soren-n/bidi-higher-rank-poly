@@ -182,7 +182,7 @@ let rec acyclic_poly l_exist r_poly fail return =
       if not (exist_equal l_exist r_exist) then return () else
       let ctx = Naming.make_ctx () in
       layout_poly ctx r_poly @@ fun r_poly1 ->
-      fail (~$"Type is cyclic" <+> grp r_poly1)
+      fail (~$"type is cyclic" <+> grp r_poly1)
     | PArrow (dom, codom) ->
       _visit dom @@ fun () ->
       _visit codom return
@@ -200,7 +200,7 @@ and acyclic_mono l_exist r_mono fail return =
       if not (exist_equal l_exist r_exist) then return () else
       let ctx = Naming.make_ctx () in
       layout_mono ctx r_mono @@ fun r_mono1 ->
-      fail (~$"Type is cyclic" <+> grp r_mono1)
+      fail (~$"type is cyclic" <+> grp r_mono1)
     | MArrow (dom, codom) ->
       _visit dom @@ fun () ->
       _visit codom return
