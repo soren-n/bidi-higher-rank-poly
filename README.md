@@ -34,7 +34,7 @@ unit              (Singleton value)
 x                 (Variables)
 x => s            (Abstractions)
 f x               (Applications)
-e : t             (Type annotation)
+(e : t)           (Type annotation)
 ```
 
 # Building
