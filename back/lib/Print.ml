@@ -13,7 +13,7 @@ let _wrap layout =
 let _layout_mono ctx env mono wrap return =
   let rec _visit mono wrap return =
     match mono with
-    | MNothing -> return ~$"⊥"
+    | MNothing -> return ~$"nothing"
     | MUnit -> return ~$"unit"
     | MParam label -> return ~$label
     | MVar exist ->
@@ -48,7 +48,7 @@ let print_mono ctx mono return =
 let _layout_poly ctx env poly wrap return =
   let rec _visit poly wrap return =
     match poly with
-    | PNothing -> return ~$"⊥"
+    | PNothing -> return ~$"nothing"
     | PUnit -> return ~$"unit"
     | PParam label -> return ~$label
     | PVar exist ->
@@ -70,7 +70,7 @@ let _layout_poly ctx env poly wrap return =
       return (wrap (seq (dom1 <+> ~$"->" <!+> codom1)))
     | PForall (param, poly1) ->
       _visit poly1 _pass @@ fun poly2 ->
-      return (wrap (~$"∀" <!&> ~$param <!&> ~$"." <&> nest (seq poly2)))
+      return (wrap (~$param <!+> ~$"=>" <+> nest (seq poly2)))
     | PMono mono ->
       _layout_mono ctx env mono wrap return
   in
