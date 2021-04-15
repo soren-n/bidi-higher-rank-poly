@@ -377,7 +377,11 @@ and synth_apply poly expr tctx fail return =
   | PForall (param, poly1) ->
     extend param tctx @@ fun tctx1 ->
     synth_apply poly1 expr tctx1 fail return
-  | _ -> assert false (* Invariant *)
+  | PMono MArrow (dom, codom) ->
+    check_expr expr (poly_mono dom) tctx fail @@ fun () ->
+    return (poly_mono codom)
+  | _ ->
+    assert false (* Invariant *)
 and check_expr expr poly tctx fail return =
   match expr, poly with
   | EUnit, PUnit -> return ()
