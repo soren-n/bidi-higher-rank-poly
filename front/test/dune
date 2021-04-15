@@ -1,0 +1,10 @@
+(executable
+  (name Main)
+  (libraries
+    qcheck
+    landmarks
+    bhrp.util
+    bhrp.back
+    bhrp.front
+    bhrp.shared)
+  (instrumentation (backend bhrp.landmarks)))

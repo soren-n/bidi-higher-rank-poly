@@ -1,0 +1,9 @@
+(library
+  (name Shared)
+  (public_name bhrp.shared)
+  (libraries
+    qcheck
+    landmarks
+    bhrp.util
+    bhrp.back)
+  (instrumentation (backend bhrp.landmarks)))

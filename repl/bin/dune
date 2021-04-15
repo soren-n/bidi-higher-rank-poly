@@ -1,0 +1,7 @@
+(executable
+  (name Main)
+  (libraries bhrp.util bhrp.back bhrp.front))
+
+(install
+  (section bin)
+  (files (Main.exe as bhrp.repl)))

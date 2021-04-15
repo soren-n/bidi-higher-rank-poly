@@ -1,3 +1,0 @@
-(test
-  (name Main)
-  (libraries qcheck Util Back Front))

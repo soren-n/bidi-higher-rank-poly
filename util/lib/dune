@@ -1,0 +1,5 @@
+(library
+  (name util)
+  (public_name bhrp.util)
+  (libraries landmarks)
+  (instrumentation (backend bhrp.landmarks)))
