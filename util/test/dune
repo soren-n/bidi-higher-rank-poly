@@ -1,4 +1,7 @@
 (executable
   (name Main)
-  (libraries qcheck landmarks bhrp.util)
+  (libraries
+    qcheck
+    landmarks
+    bhrp.util)
   (instrumentation (backend bhrp.landmarks)))

@@ -1,4 +1,3 @@
-open Util
 open Syntax
 open Naming
 val layout_mono : ctx -> mono -> (Typeset.eDSL -> 'a) -> 'a

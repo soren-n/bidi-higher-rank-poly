@@ -1,6 +1,9 @@
 (executable
   (name Main)
-  (libraries bhrp.util bhrp.back bhrp.front))
+  (libraries
+    typeset
+    bhrp.back
+    bhrp.front))
 
 (install
   (section bin)

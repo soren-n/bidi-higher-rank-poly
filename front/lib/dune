@@ -6,7 +6,10 @@
   (modules Parser))
 
 (library
-  (name Front)
+  (name front)
   (public_name bhrp.front)
-  (libraries landmarks bhrp.util bhrp.back)
+  (libraries
+    landmarks
+    bhrp.back
+    bhrp.util)
   (instrumentation (backend bhrp.landmarks)))

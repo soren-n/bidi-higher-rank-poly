@@ -1,8 +1,7 @@
-open Util
+open Bhrp_shared
+open Expr
 open Back
 open Front
-open Shared
-open Expr
 
 let print layout =
   Typeset.compile layout @@ fun doc ->

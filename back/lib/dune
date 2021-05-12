@@ -1,5 +1,8 @@
 (library
-  (name Back)
+  (name back)
   (public_name bhrp.back)
-  (libraries landmarks bhrp.util)
+  (libraries
+    landmarks
+    typeset
+    bhrp.util)
   (instrumentation (backend bhrp.landmarks)))

@@ -1,8 +1,8 @@
-open Back
-open Util
-open Front
-open Extra
 open Typeset
+open Util
+open Extra
+open Back
+open Front
 
 let print layout =
   Typeset.compile layout @@ fun doc ->
