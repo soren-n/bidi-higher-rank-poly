@@ -1,5 +1,6 @@
 open Util
 open Back
+open Constants
 open Syntax
 open Simple
 
@@ -20,17 +21,27 @@ let rec _gen_mono n ps vs =
     ; m, map mono_var (oneofl _vs)
     ]
   in
+  let _gen_mono_bit =
+    frequency
+    [ 1, return (mono_bit Bit8)
+    ; 1, return (mono_bit Bit16)
+    ; 1, return (mono_bit Bit32)
+    ; 1, return (mono_bit Bit64)
+    ]
+  in
   let _gen_mono_term =
     if (List.length ps) <= 0 then
       frequency
       [ 1, return mono_unit
       ; 1, _gen_mono_var
+      ; 1, _gen_mono_bit
       ]
     else
       frequency
       [ 1, return mono_unit
       ; 1, map mono_param (oneofl ps)
       ; 1, _gen_mono_var
+      ; 1, _gen_mono_bit
       ]
   in
   if n = 0 then _gen_mono_term else
@@ -56,6 +67,7 @@ let rec shrink_mono mono =
   match mono with
   | MNothing -> empty
   | MUnit -> empty
+  | MBit _size -> empty
   | MParam _name -> empty
   | MVar exist ->
     begin match !exist with
@@ -78,6 +90,7 @@ type simple_mono =
   | SMProper of proper_simple_mono
 and proper_simple_mono =
   | SMUnit
+  | SMBit of bit_size
   | SMVar of exist
   | SMArrow of proper_simple_mono * proper_simple_mono
 and exist =
@@ -86,6 +99,7 @@ and exist =
 let simple_mono_nothing = SMNothing
 let simple_mono_proper proper_simple_mono = SMProper proper_simple_mono
 let proper_simple_mono_unit = SMUnit
+let proper_simple_mono_bit size = SMBit size
 let proper_simple_mono_var exist = SMVar exist
 let proper_simple_mono_arrow dom codom = SMArrow (dom, codom)
 
@@ -95,6 +109,10 @@ let proper_simple_mono_equal left right =
   let rec _equal left right env fail return =
     match left, right with
     | SMUnit, SMUnit -> return env
+    | SMBit l_size, SMBit r_size ->
+      if l_size = r_size
+      then return env
+      else fail ()
     | SMVar left1, SMVar right1 ->
       Env.lookup exist_equal left1 env
         (fun () ->
@@ -137,6 +155,7 @@ let _proper_simple_convert proper_simple return =
   let rec _convert proper_simple return =
     match proper_simple with
     | SUnit -> return proper_simple_mono_unit
+    | SBit size -> return (proper_simple_mono_bit size)
     | SArrow (dom, codom) ->
       _convert dom @@ fun dom1 ->
       _convert codom @@ fun codom1 ->
@@ -158,6 +177,11 @@ and _gen_proper_simple_mono proper_simple vs =
     frequency
     [ 1, _gen_proper_simple_mono_exist proper_simple vs
     ; 10, return proper_simple_mono_unit
+    ]
+  | SBit size ->
+    frequency
+    [ 1, _gen_proper_simple_mono_exist proper_simple vs
+    ; 10, return (proper_simple_mono_bit size)
     ]
   | SArrow (dom, codom) ->
     frequency
@@ -196,13 +220,20 @@ let gen_simple_mono =
 
 let rec _print_simple_mono ctx env simple_mono return =
   match simple_mono with
-  | SMNothing -> return "⊥"
+  | SMNothing -> return "nothing"
   | SMProper proper_simple_mono ->
     _print_proper_simple_mono ctx env proper_simple_mono false return
 and _print_proper_simple_mono ctx env proper_simple_mono group return =
   let open Printf in
   match proper_simple_mono with
   | SMUnit -> return "unit"
+  | SMBit size ->
+    begin match size with
+    | Bit8 -> return "bit8"
+    | Bit16 -> return "bit16"
+    | Bit32 -> return "bit32"
+    | Bit64 -> return "bit64"
+    end
   | SMVar exist ->
     let _env = !env in
     Env.lookup exist_equal exist _env
@@ -238,6 +269,7 @@ and shrink_proper_simple_mono proper_simple_mono =
   let open QCheck.Iter in
   match proper_simple_mono with
   | SMUnit -> empty
+  | SMBit _size -> empty
   | SMVar _exist -> empty
   | SMArrow (dom, codom) ->
     of_list [dom; codom]

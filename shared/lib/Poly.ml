@@ -21,17 +21,27 @@ let rec _gen_poly n ctx ps vs =
     ; m, map poly_var (oneofl _vs)
     ]
   in
+  let _gen_poly_bit =
+    frequency
+    [ 1, return (poly_bit Bit8)
+    ; 1, return (poly_bit Bit16)
+    ; 1, return (poly_bit Bit32)
+    ; 1, return (poly_bit Bit64)
+    ]
+  in
   let _gen_poly_term =
     if (List.length ps) <= 0 then
       frequency
       [ 1, return poly_unit
       ; 1, _gen_poly_var
+      ; 1, _gen_poly_bit
       ]
     else
       frequency
       [ 1, return poly_unit
       ; 1, map poly_param (oneofl ps)
       ; 1, _gen_poly_var
+      ; 1, _gen_poly_bit
       ]
   in
   let _gen_poly_forall st =
@@ -64,6 +74,7 @@ let rec shrink_poly poly =
   match poly with
   | PNothing -> empty
   | PUnit -> empty
+  | PBit _size -> empty
   | PParam _name -> empty
   | PVar exist ->
     begin match !exist with
@@ -93,6 +104,7 @@ let rec simple_2_simple_poly simple return =
 and _proper_simple_2_simple_poly proper_simple return =
   match proper_simple with
   | SUnit -> return poly_unit
+  | SBit size -> return (poly_bit size)
   | SArrow (dom, codom) ->
     _proper_simple_2_simple_poly dom @@ fun dom1 ->
     _proper_simple_2_simple_poly codom @@ fun codom1 ->
@@ -107,6 +119,7 @@ let rec simple_mono_2_simple_poly simple_mono return =
 and _proper_simple_mono_2_simple_poly env proper_simple_mono return =
   match proper_simple_mono with
   | SMUnit -> return poly_unit
+  | SMBit size -> return (poly_bit size)
   | SMVar from_exist ->
     let _env = !env in
     Env.lookup exist_equal from_exist _env

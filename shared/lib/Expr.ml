@@ -5,14 +5,49 @@ open Syntax
 open Mono
 open Poly
 
+(* Bit value *)
+let _gen_bit_value_sized size =
+  let open QCheck.Gen in
+  let last = size / 8 in
+  let _set_int_2_bytes n value =
+    let rec _visit index n =
+      if index = last then () else
+      let r = n mod 256 in
+      Bytes.set value index (Char.chr r);
+      _visit (index + 1) (n - r)
+    in
+    _visit 0 n
+  in
+  let _pow_2 n =
+    if n <= 0 then 0 else
+    let rec _visit n r =
+      if n = 0 then r else
+      _visit (n - 1) (r * 2)
+    in
+    _visit (n - 1) 2
+  in
+  int_range 0 ((_pow_2 (min 32 size)) - 1) >>= fun n ->
+  let value = Bytes.create last in
+  _set_int_2_bytes n value;
+  return value
+
 (* Expr *)
 let rec _gen_expr n ctx ps =
   let open QCheck.Gen in
+  let _gen_bit_value =
+    frequency
+    [ 1, _gen_bit_value_sized 8
+    ; 1, _gen_bit_value_sized 16
+    ; 1, _gen_bit_value_sized 32
+    ; 1, _gen_bit_value_sized 64
+    ]
+  in
   let _gen_expr_term =
     if (List.length ps) <= 0 then
       frequency
       [ 1, return expr_undefined
       ; 2, return expr_unit
+      ; 2, map expr_bit _gen_bit_value
       ]
     else
       frequency
@@ -88,7 +123,9 @@ let rec shrink_expr expr =
   match expr with
   | EUndefined -> empty
   | EUnit -> empty
+  | EBit _value -> empty
   | EVar _name -> empty
+  | EProc _ -> empty
   | EAbs (param, body) ->
     shrink_stmt body >|= fun body1 -> expr_abs param body1
   | EApp (func, arg) ->
@@ -99,6 +136,7 @@ let rec shrink_expr expr =
     return expr1
     <+> (shrink_expr expr1 >|= fun expr2 -> expr_anno expr2 poly)
     <+> (shrink_poly poly >|= fun poly1 -> expr_anno expr poly1)
+
 and shrink_stmt stmt =
   let open QCheck.Iter in
   match stmt with
@@ -152,6 +190,7 @@ let rec _synth_expr n ctx env simple_mono =
 and _synth_expr_proper n ctx env proper_simple_mono =
   match proper_simple_mono with
   | SMUnit -> _synth_expr_unit n ctx env
+  | SMBit size -> _synth_expr_bit n ctx env size
   | SMVar exist -> _synth_expr_var n ctx env exist
   | SMArrow (dom, codom) -> _synth_expr_arrow n ctx env dom codom
 and _synth_expr_unit n ctx env =
@@ -160,6 +199,13 @@ and _synth_expr_unit n ctx env =
   frequency
   [ 1, _synth_expr_unit_term env
   ; 2, _synth_expr_redex (n / 2) ctx env proper_simple_mono_unit
+  ]
+and _synth_expr_bit n ctx env size =
+  let open QCheck.Gen in
+  if n = 0 then _synth_expr_bit_term env size else
+  frequency
+  [ 1, _synth_expr_bit_term env size
+  ; 2, _synth_expr_redex (n / 2) ctx env (proper_simple_mono_bit size)
   ]
 and _synth_expr_var n ctx env exist =
   let open QCheck.Gen in
@@ -182,6 +228,23 @@ and _synth_expr_unit_term env =
       let m = List.length instances in
       frequency
       [ 1, return expr_unit
+      ; m, oneofl instances
+      ])
+and _synth_expr_bit_term env size =
+  let open QCheck.Gen in
+  let size1 =
+    match size with
+    | Bit8 -> 8
+    | Bit16 -> 16
+    | Bit32 -> 32
+    | Bit64 -> 64
+  in
+  _synth_expr_lookup (proper_simple_mono_bit size) env
+    (fun () -> map expr_bit (_gen_bit_value_sized size1))
+    (fun instances ->
+      let m = List.length instances in
+      frequency
+      [ 1, map expr_bit (_gen_bit_value_sized size1)
       ; m, oneofl instances
       ])
 and _synth_expr_arrow n ctx env dom codom =
@@ -304,6 +367,7 @@ let stmt_2_expr env stmt return =
     match expr with
     | EUndefined -> return expr_undefined
     | EUnit -> return expr_unit
+    | EBit value -> return (expr_bit value)
     | EVar name ->
       Env.lookup label_equal name env
         (fun () -> return (expr_var name))
@@ -318,6 +382,8 @@ let stmt_2_expr env stmt return =
     | EAnno (expr1, poly) ->
       _visit_expr env expr1 @@ fun expr2 ->
       return (expr_anno expr2 poly)
+    | EProc (name, arity, proc) ->
+      return (expr_proc name arity proc)
   in
   _visit_stmt_drop env stmt return
 
@@ -337,6 +403,8 @@ and label_ref_count_expr label expr return =
   match expr with
   | EUndefined -> return 0
   | EUnit -> return 0
+  | EBit _value -> return 0
+  | EProc (_name, _arity, _proc) -> return 0
   | EVar name ->
     if label_equal label name
     then return 1
@@ -367,7 +435,7 @@ let rec subst_stmt label subst stmt return =
     return (stmt_expr expr1)
 and subst_expr label subst expr return =
   match expr with
-  | EUndefined | EUnit -> return expr
+  | EUndefined | EUnit | EBit _ | EProc _ -> return expr
   | EVar name ->
     if label_equal label name
     then return subst
@@ -416,6 +484,8 @@ and type_directed_shrink_expr env scope expr yield =
   match expr with
   | EUndefined -> ()
   | EUnit -> ()
+  | EBit _value -> ()
+  | EProc (_name, _arity, _proc) -> ()
   | EVar name ->
     Env.lookup label_equal name scope
       (fun () ->

@@ -1,4 +1,6 @@
 %{
+  open Util
+  open Extra
   open Back
   open Syntax
 %}
@@ -9,6 +11,7 @@
 %token UNDEFINED
 %token UNIT
 %token <Back.Syntax.label> LABEL
+%token <Back.Syntax.binary> BINARY
 %token LPAREN RPAREN
 %token DECLARE
 %token DEFINE
@@ -64,6 +67,8 @@ expr_simple:
     { expr_undefined }
   | UNIT
     { expr_unit }
+  | b = BINARY
+    { expr_bit (binary_2_bytes b) }
   | x = LABEL
     { expr_var x }
 

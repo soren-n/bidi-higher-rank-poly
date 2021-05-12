@@ -114,7 +114,8 @@ let usage =
 let () =
   Sys.catch_break true;
   Arg.parse options anonymous usage;
+  Value.prepare Native.venv @@ fun venv1 ->
   let _files = !files in
   if (List.length _files) <> 0
-  then interp_files Native.tenv Native.venv !files
-  else repl Native.tenv Native.venv
+  then interp_files Native.tenv venv1 !files
+  else repl Native.tenv venv1

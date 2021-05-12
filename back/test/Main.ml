@@ -35,6 +35,7 @@ let purely_universally_quantified poly =
     match poly with
     | PNothing -> true
     | PUnit -> true
+    | PBit _size -> true
     | PParam _label -> true
     | PVar _exist -> false
     | PArrow (dom, codom) ->
@@ -47,6 +48,7 @@ let purely_universally_quantified poly =
     match mono with
     | MNothing -> true
     | MUnit -> true
+    | MBit _size -> true
     | MParam _label -> true
     | MVar _exist -> false
     | MArrow (dom, codom) ->

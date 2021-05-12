@@ -5,6 +5,7 @@ let rec _copy_mono mono env return =
   match mono with
   | MNothing -> return mono_nothing env
   | MUnit -> return mono_unit env
+  | MBit size -> return (mono_bit size) env
   | MParam name -> return (mono_param name) env
   | MVar from_exist ->
     Env.lookup exist_equal from_exist env
@@ -32,6 +33,7 @@ let rec _copy_poly poly env return =
   match poly with
   | PNothing -> return poly_nothing env
   | PUnit -> return poly_unit env
+  | PBit size -> return (poly_bit size) env
   | PParam name -> return (poly_param name) env
   | PVar from_exist ->
     Env.lookup exist_equal from_exist env
@@ -65,6 +67,7 @@ let rec copy_expr expr return =
   match expr with
   | EUndefined -> return expr_undefined
   | EUnit -> return expr_unit
+  | EBit value -> return (expr_bit value)
   | EVar name -> return (expr_var name)
   | EAbs (param, body) ->
     copy_stmt body @@ fun body1 ->
@@ -77,6 +80,8 @@ let rec copy_expr expr return =
     copy_expr expr1 @@ fun expr2 ->
     copy_poly poly @@ fun poly1 ->
     return (expr_anno expr2 poly1)
+  | EProc (name, arity, proc) ->
+    return (expr_proc name arity proc)
 and copy_stmt stmt return =
   match stmt with
   | SDecl (name, poly, stmt1) ->

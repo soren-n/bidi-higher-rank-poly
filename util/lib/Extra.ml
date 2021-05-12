@@ -118,3 +118,38 @@ module String = struct
         else result)
       xs
 end
+
+let bytes_2_binary value =
+  let last = Bytes.length value in
+  let rec _visit_bytes index result =
+    if index = last then result else
+    let value1 = Char.code (Bytes.get value index) in
+    let result1 = _visit_byte 0 value1 result in
+    _visit_bytes (index + 1) result1
+  and _visit_byte index value result =
+    if index = 8 then result else
+    let result1 = if (value mod 2) = 0 then "0" :: result else "1" :: result in
+    _visit_byte (index + 1) (value / 2) result1
+  in
+  let result = _visit_bytes 0 [] in
+  List.fold "" String.conc result
+
+let binary_2_bytes binary =
+  let last = (String.length binary) / 8 in
+  let rec _visit_bytes index result =
+    if index = last then result else
+    let index1 = (index * 8) - 1 in
+    let last1 = index1 + 8 in
+    let byte = _visit_byte index1 last1 1 0 in
+    Bytes.set result (last - (index + 1)) (Char.chr byte);
+    _visit_bytes (index + 1) result
+  and _visit_byte index last place result =
+    if index = last then result else
+    let result1 =
+      if (String.get binary last) = '0'
+      then result else place + result
+    in
+    _visit_byte index (last - 1) (place * 2) result1
+  in
+  let value = Bytes.create last in
+  _visit_bytes 0 value

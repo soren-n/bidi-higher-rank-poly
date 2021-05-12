@@ -1,3 +1,4 @@
+open Constants
 open Util
 open Extra
 open Syntax
@@ -26,6 +27,7 @@ let rec norm_poly poly tctx return =
   match poly with
   | PNothing -> return poly_nothing
   | PUnit -> return poly_unit
+  | PBit size -> return (poly_bit size)
   | PParam param ->
     lookup_t param tctx
       (fun _msg ->
@@ -55,6 +57,7 @@ and norm_mono mono tctx return =
   match mono with
   | MNothing -> return mono_nothing
   | MUnit -> return mono_unit
+  | MBit size -> return (mono_bit size)
   | MParam param ->
     lookup_t param tctx
       (fun _msg ->
@@ -88,6 +91,7 @@ let rec instantiate_l_poly l_exist poly tctx =
   match poly with
   | PNothing -> l_exist := Some mono_nothing
   | PUnit -> l_exist := Some mono_unit
+  | PBit size -> l_exist := Some (mono_bit size)
   | PVar r_exist -> r_exist := Some (mono_var l_exist)
   | PParam name ->
     lookup_t name tctx
@@ -113,6 +117,7 @@ and instantiate_l_mono l_exist mono tctx =
   match mono with
   | MNothing -> l_exist := Some mono_nothing
   | MUnit -> l_exist := Some mono_unit
+  | MBit size -> l_exist := Some (mono_bit size)
   | MVar r_exist -> r_exist := Some (mono_var l_exist)
   | MParam name ->
     lookup_t name tctx
@@ -133,6 +138,7 @@ and instantiate_r_poly poly r_exist tctx =
   match poly with
   | PNothing -> r_exist := Some mono_nothing
   | PUnit -> r_exist := Some mono_unit
+  | PBit size -> r_exist := Some (mono_bit size)
   | PVar l_exist -> l_exist := Some (mono_var r_exist)
   | PParam name ->
     lookup_t name tctx
@@ -158,6 +164,7 @@ and instantiate_r_mono mono r_exist tctx =
   match mono with
   | MNothing -> r_exist := Some mono_nothing
   | MUnit -> r_exist := Some mono_unit
+  | MBit size -> r_exist := Some (mono_bit size)
   | MVar l_exist -> l_exist := Some (mono_var r_exist)
   | MParam name ->
     lookup_t name tctx
@@ -190,7 +197,7 @@ let rec acyclic_poly l_exist r_poly fail return =
       _visit poly1 return
     | PMono mono ->
       acyclic_mono l_exist mono fail return
-    | PNothing | PUnit | PParam _ -> return ()
+    | PNothing | PUnit | PBit _ | PParam _ -> return ()
   in
   _visit r_poly return
 and acyclic_mono l_exist r_mono fail return =
@@ -204,7 +211,7 @@ and acyclic_mono l_exist r_mono fail return =
     | MArrow (dom, codom) ->
       _visit dom @@ fun () ->
       _visit codom return
-    | MNothing | MUnit | MParam _ -> return ()
+    | MNothing | MUnit | MBit _ | MParam _ -> return ()
   in
   _visit r_mono return
 
@@ -212,6 +219,7 @@ let rec mono_2_poly mono return =
   match mono with
   | MNothing -> return poly_nothing
   | MUnit -> return poly_unit
+  | MBit size -> return (poly_bit size)
   | MParam label -> return (poly_param label)
   | MVar exist -> return (poly_var exist)
   | MArrow (dom, codom) ->
@@ -236,12 +244,25 @@ let subtype left right tctx fail return =
   let _fail_cont fail left right tctx msg =
     fail ((_msg left right tctx) </> ~$"because" <!+> msg)
   in
+  let _bit_size_2_int size return =
+    match size with
+    | Bit8 -> return 8
+    | Bit16 -> return 16
+    | Bit32 -> return 32
+    | Bit64 -> return 64
+  in
   let rec _subtype left right tctx fail return =
     let _fail = _fail_end fail left right tctx in
     let __fail = _fail_cont fail left right tctx in
     match left, right with
     | PNothing, PNothing -> return ()
     | PUnit, PUnit -> return ()
+    | PBit l_size, PBit r_size ->
+      _bit_size_2_int l_size @@ fun l_size1 ->
+      _bit_size_2_int r_size @@ fun r_size1 ->
+      if l_size1 <= r_size1
+      then return ()
+      else _fail ()
     | PParam l_name, PParam r_name ->
       lookup_t l_name tctx
         (fun _msg ->
@@ -299,6 +320,7 @@ let _recursion_allowed tctx poly =
     match poly with
     | PNothing -> false
     | PUnit -> false
+    | PBit _size -> false
     | PParam name ->
       lookup_t name tctx
         (fun _msg -> false)
@@ -317,6 +339,7 @@ let _recursion_allowed tctx poly =
     match mono with
     | MNothing -> false
     | MUnit -> false
+    | MBit _size -> false
     | MParam name ->
       lookup_t name tctx
         (fun _msg -> false)
@@ -334,6 +357,15 @@ let rec synth_expr expr tctx fail return =
   match expr with
   | EUndefined -> return poly_nothing
   | EUnit -> return poly_unit
+  | EBit value ->
+    let length = Bytes.length value in
+    begin match length with
+    | 1 -> return (poly_bit Bit8)
+    | 2 -> return (poly_bit Bit16)
+    | 4 -> return (poly_bit Bit32)
+    | 8 -> return (poly_bit Bit64)
+    | _ -> assert false (* Syntax invariant *)
+    end
   | EVar name -> lookup_v name tctx fail return
   | EAbs (param, body) ->
     let dom = poly_var (ref None) in
@@ -348,6 +380,8 @@ let rec synth_expr expr tctx fail return =
   | EAnno (expr1, poly) ->
     check_expr expr1 poly tctx fail @@ fun () ->
     return poly
+  | EProc (name, _arity, _proc) ->
+    lookup_v name tctx fail return
 and synth_stmt stmt tctx fail return =
   match stmt with
   | SDecl (name, poly, stmt1) ->
@@ -458,7 +492,7 @@ let generalize poly return =
     | PMono mono ->
       _visit_mono mono env @@ fun mono1 ->
       return (poly_mono mono1)
-    | PNothing | PUnit -> return poly
+    | PNothing | PUnit | PBit _ -> return poly
   and _visit_mono mono env return =
     match mono with
     | MParam from_label ->
@@ -485,7 +519,7 @@ let generalize poly return =
       _visit_mono dom env @@ fun dom1 ->
       _visit_mono codom env @@ fun codom1 ->
       return (mono_arrow dom1 codom1)
-    | MNothing | MUnit -> return mono
+    | MNothing | MUnit | MBit _ -> return mono
   in
   _visit_poly poly Env.empty @@ fun poly1 ->
   Env.values !exists @@ fun labels ->

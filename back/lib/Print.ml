@@ -1,4 +1,5 @@
 open Util
+open Extra
 open Typeset
 open Syntax
 
@@ -15,6 +16,13 @@ let _layout_mono ctx env mono wrap return =
     match mono with
     | MNothing -> return ~$"nothing"
     | MUnit -> return ~$"unit"
+    | MBit size ->
+      begin match size with
+      | Bit8 -> return ~$"bit8"
+      | Bit16 -> return ~$"bit16"
+      | Bit32 -> return ~$"bit32"
+      | Bit64 -> return ~$"bit64"
+      end
     | MParam label -> return ~$label
     | MVar exist ->
       begin match !exist with
@@ -50,6 +58,13 @@ let _layout_poly ctx env poly wrap return =
     match poly with
     | PNothing -> return ~$"nothing"
     | PUnit -> return ~$"unit"
+    | PBit size ->
+      begin match size with
+      | Bit8 -> return ~$"bit8"
+      | Bit16 -> return ~$"bit16"
+      | Bit32 -> return ~$"bit32"
+      | Bit64 -> return ~$"bit64"
+      end
     | PParam label -> return ~$label
     | PVar exist ->
       begin match !exist with
@@ -89,6 +104,7 @@ let rec _layout_expr ctx expr wrap return =
   match expr with
   | EUndefined -> return ~$"undefined"
   | EUnit -> return ~$"unit"
+  | EBit value -> return ~$(bytes_2_binary value)
   | EVar label -> return ~$label
   | EAbs (param, body) ->
     _layout_stmt ctx body @@ fun body1 ->
@@ -102,6 +118,8 @@ let rec _layout_expr ctx expr wrap return =
     let env = ref Env.empty in
     _layout_poly ctx env poly _pass @@ fun poly1 ->
     return (wrap (expr2 <!+> seq (~$":" <+> nest poly1)))
+  | EProc (name, _arity, _proc) ->
+    return (wrap (~$"<proc \"" <!&> ~$name <!&> ~$"\">"))
 and _layout_stmt ctx stmt return =
   match stmt with
   | SDecl (label, poly, stmt1) ->

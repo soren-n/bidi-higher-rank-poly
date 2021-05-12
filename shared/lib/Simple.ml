@@ -1,19 +1,25 @@
+open Back
+open Constants
+
 type simple =
   | SNothing
   | SProper of proper_simple
 and proper_simple =
   | SUnit
+  | SBit of bit_size
   | SArrow of proper_simple * proper_simple
 
 let simple_nothing = SNothing
 let simple_proper simple = SProper simple
 let proper_simple_unit = SUnit
+let proper_simple_bit size = SBit size
 let proper_simple_arrow dom codom = SArrow (dom, codom)
 
 let proper_simple_equal left right =
   let rec _equal left right =
     match left, right with
     | SUnit, SUnit -> true
+    | SBit l_size, SBit r_size -> l_size = r_size
     | SArrow (l_dom, l_codom), SArrow (r_dom, r_codom) ->
       if not (_equal l_dom r_dom) then false else
       if not (_equal l_codom r_codom) then false else
@@ -29,6 +35,15 @@ let simple_equal left right =
     proper_simple_equal left1 right1
   | _, _ -> false
 
+let _gen_simple_bit =
+  let open QCheck.Gen in
+  frequency
+  [ 1, return (proper_simple_bit Bit8)
+  ; 1, return (proper_simple_bit Bit16)
+  ; 1, return (proper_simple_bit Bit32)
+  ; 1, return (proper_simple_bit Bit64)
+  ]
+
 let rec _gen_proper_simple n =
   let open QCheck.Gen in
   match n with
@@ -36,6 +51,7 @@ let rec _gen_proper_simple n =
   | _ ->
     frequency
     [ 1, return proper_simple_unit
+    ; 1, _gen_simple_bit
     ; 2, map2 proper_simple_arrow
       (_gen_proper_simple (n / 2))
       (_gen_proper_simple (n / 2))
@@ -55,6 +71,7 @@ let rec _gen_simple n =
     frequency
     [ 1, _gen_simple_nothing
     ; 100, return proper_simple_unit
+    ; 100, _gen_simple_bit
     ]
   in
   match n with
@@ -78,13 +95,20 @@ let gen_simple =
 
 let rec _print_simple simple return =
   match simple with
-  | SNothing -> return "⊥"
+  | SNothing -> return "nothing"
   | SProper proper_simple ->
     _print_proper_simple proper_simple false return
 and _print_proper_simple proper_simple group return =
   let open Printf in
   match proper_simple with
   | SUnit -> return "unit"
+  | SBit size ->
+    begin match size with
+    | Bit8 -> return "bit8"
+    | Bit16 -> return "bit16"
+    | Bit32 -> return "bit32"
+    | Bit64 -> return "bit64"
+    end
   | SArrow (dom, codom) ->
     _print_proper_simple dom true @@ fun dom1 ->
     _print_proper_simple codom false @@ fun codom1 ->
@@ -108,6 +132,7 @@ and shrink_proper_simple proper_simple =
   let open QCheck.Iter in
   match proper_simple with
   | SUnit -> empty
+  | SBit _size -> empty
   | SArrow (dom, codom) ->
     of_list [dom; codom]
     <+> (shrink_proper_simple dom >|= fun dom1 ->
