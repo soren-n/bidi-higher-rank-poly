@@ -3,8 +3,7 @@
   (libraries
     qcheck
     landmarks
-    bhrp.util
     bhrp.back
     bhrp.front
-    bhrp.shared)
+    bhrp_shared)
   (instrumentation (backend bhrp.landmarks)))

@@ -1,15 +1,20 @@
 opam-version: "2.0"
+name: "bhrp"
 version: "1.0"
+synopsis: "Didactic OCaml implementation of the bidirectional higher-rank polymorphic type checker"
 maintainer: "sorennorbaek@gmail.com"
 authors: ["Soren Norbaek <sorennorbaek@gmail.com>"]
-synopsis: "Didactic OCaml implementation of the bidirectional higher-rank polymorphic type checker"
-dev-repo: "git+https://github.com/soren-n/bidi-higher-rank-poly.git"
+license: "MIT"
+homepage: "https://github.com/soren-n/bidi-higher-rank-poly"
 bug-reports: "https://github.com/soren-n/bidi-higher-rank-poly/issues"
+dev-repo: "git+https://github.com/soren-n/bidi-higher-rank-poly.git"
 build: [
-  ["dune" "build" "-p" name "-j" jobs]
+  "dune" "build" "-p" name "-j" jobs "@install"
 ]
 depends: [
-  "dune" {>= "2.7"}
-  "qcheck" {>= "0.14"}
+  "ocaml" {>= "4.08"}
+  "dune" {>= "2.8"}
+  "qcheck" {>= "0.17"}
+  "typeset" {>= "0.2"}
   "landmarks" {>= "1.3"}
 ]

@@ -1,7 +1,6 @@
-open Util
+open Bhrp_shared
 open Back
 open Front
-open Shared
 open Poly
 open Expr
 open Simple

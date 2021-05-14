@@ -1,4 +1,3 @@
-open Util
 open Syntax
 open Context
 type 'r fail = Typeset.eDSL -> 'r
