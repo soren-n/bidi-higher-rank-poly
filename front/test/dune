@@ -1,5 +1,5 @@
 (executable
-  (name Main)
+  (name Tests)
   (libraries
     qcheck
     landmarks
@@ -7,3 +7,7 @@
     bhrp.front
     bhrp_shared)
   (instrumentation (backend bhrp.landmarks)))
+
+(rule
+ (alias runtest)
+ (action (run ./Tests.exe)))

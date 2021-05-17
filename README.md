@@ -46,11 +46,21 @@ dune build back/test  (Build the backend tests)
 dune build front/test (Build the frontend tests)
 ```
 
+Or build all artefacts at once with
+```Text
+dune build
+```
+
 # Testing
 ```text
-_build/default/util/test/Main.exe   (Run the util tests)
-_build/default/back/test/Main.exe   (Run the backend tests)
-_build/default/front/test/Main.exe  (Run the frontend tests)
+_build/default/util/test/Tests.exe   (Run the util tests)
+_build/default/back/test/Tests.exe   (Run the backend tests)
+_build/default/front/test/Tests.exe  (Run the frontend tests)
+```
+
+Or run all tests at once with
+```Text
+dune runtest
 ```
 
 # Using the REPL
