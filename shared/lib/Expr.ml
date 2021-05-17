@@ -5,124 +5,6 @@ open Syntax
 open Mono
 open Poly
 
-(* Expr *)
-let rec _gen_expr n ctx ps =
-  let open QCheck.Gen in
-  let _gen_expr_term =
-    if (List.length ps) <= 0 then
-      frequency
-      [ 1, return expr_undefined
-      ; 2, return expr_unit
-      ]
-    else
-      frequency
-      [ 1, return expr_undefined
-      ; 2, return expr_unit
-      ; 2, map expr_var (oneofl ps)
-      ]
-  in
-  let _gen_expr_abs st =
-    Naming.sample_label ctx @@ fun param ->
-    map (expr_abs param)
-      (_gen_stmt (n - 1) ctx (param :: ps)) st
-  in
-  let _gen_expr_app st =
-    map2 expr_app
-      (_gen_expr (n / 2) ctx ps)
-      (_gen_expr (n / 2) ctx ps)
-      st
-  in
-  if n = 0 then _gen_expr_term else
-  frequency
-  [ 1, _gen_expr_term
-  ; 1, _gen_expr_abs
-  ; 2, _gen_expr_app
-  ]
-and _gen_stmt n ctx ps =
-  let open QCheck.Gen in
-  let _gen_stmt_defn_name name =
-    map2 (stmt_defn name)
-      (_gen_expr (n / 2) ctx ps)
-      (_gen_stmt (n / 2) ctx (name :: ps))
-  in
-  let _gen_stmt_defn st =
-    Naming.sample_label ctx @@ fun name ->
-    _gen_stmt_defn_name name st
-  in
-  let _gen_stmt_decl st =
-    let vs = ref [] in
-    Naming.sample_label ctx @@ fun name ->
-    map2 (stmt_decl name)
-      (_gen_poly (n / 2) ctx ps vs)
-      (_gen_stmt_defn_name name)
-      st
-  in
-  let _gen_stmt_expr = map (stmt_expr) (_gen_expr n ctx ps) in
-  if n = 0 then _gen_stmt_expr else
-  frequency
-  [ 1, _gen_stmt_expr
-  ; 2, _gen_stmt_decl
-  ; 2, _gen_stmt_defn
-  ]
-
-let gen_expr ctx =
-  let open QCheck.Gen in
-  let ps = [] in
-  nat >>= fun n ->
-  _gen_expr n ctx ps
-
-let gen_stmt ctx =
-  let open QCheck.Gen in
-  let ps = [] in
-  nat >>= fun n ->
-  _gen_stmt n ctx ps
-
-let print_expr ctx expr =
-  Print.print_expr ctx expr (fun x -> x)
-
-let print_stmt ctx stmt =
-  Print.print_stmt ctx stmt (fun x -> x)
-
-let rec shrink_expr expr =
-  let open QCheck.Iter in
-  match expr with
-  | EUndefined -> empty
-  | EUnit -> empty
-  | EVar _name -> empty
-  | EAbs (param, body) ->
-    shrink_stmt body >|= fun body1 -> expr_abs param body1
-  | EApp (func, arg) ->
-    of_list [func; arg]
-    <+> (shrink_expr func >|= fun func1 -> expr_app func1 arg)
-    <+> (shrink_expr arg >|= fun arg1 -> expr_app func arg1)
-  | EAnno (expr1, poly) ->
-    return expr1
-    <+> (shrink_expr expr1 >|= fun expr2 -> expr_anno expr2 poly)
-    <+> (shrink_poly poly >|= fun poly1 -> expr_anno expr poly1)
-and shrink_stmt stmt =
-  let open QCheck.Iter in
-  match stmt with
-  | SDecl (name, poly, stmt1) ->
-    return stmt1
-    <+> (shrink_stmt stmt1 >|= fun stmt2 -> stmt_decl name poly stmt2)
-    <+> (shrink_poly poly >|= fun poly1 -> stmt_decl name poly1 stmt1)
-  | SDefn (name, expr, stmt1) ->
-    return stmt1
-    <+> (shrink_stmt stmt1 >|= fun stmt2 -> stmt_defn name expr stmt2)
-    <+> (shrink_expr expr >|= fun expr1 -> stmt_defn name expr1 stmt1)
-  | SExpr expr ->
-    shrink_expr expr >|= fun expr1 -> stmt_expr expr1
-
-let arbitrary_expr ctx =
-  QCheck.make (gen_expr ctx)
-    ~print: (print_expr ctx)
-    ~shrink: shrink_expr
-
-let arbitrary_stmt ctx =
-  QCheck.make (gen_stmt ctx)
-    ~print: (print_stmt ctx)
-    ~shrink: shrink_stmt
-
 (* Typed Expr *)
 let _synth_expr_empty = []
 
@@ -264,6 +146,12 @@ let gen_typed_stmt ctx =
   gen_simple_mono >>= fun simple_mono ->
   synth_stmt ctx simple_mono >>= fun stmt ->
   return (stmt, simple_mono)
+
+let print_expr ctx expr =
+  Print.print_expr ctx expr (fun x -> x)
+
+let print_stmt ctx stmt =
+  Print.print_stmt ctx stmt (fun x -> x)
 
 let print_typed_expr ctx (expr, simple_mono) =
   let open Printf in
