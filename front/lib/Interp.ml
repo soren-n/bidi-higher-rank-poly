@@ -41,15 +41,18 @@ and eval_stmt stmt env return =
   let _fix maybe_value = VFix maybe_value in
   match stmt with
   | SDecl (_, _, stmt1) -> eval_stmt stmt1 env return
-  | SDefn (name, EAbs (param, body), stmt1) ->
-    let value = ref None in
-    Env.bind name (_fix value) env @@ fun env1 ->
-    value := Some (_closure env1 param body);
-    eval_stmt stmt1 env1 return
   | SDefn (name, expr, stmt1) ->
     eval_expr expr env @@ fun expr1 ->
-    Env.bind name expr1 env @@ fun env1 ->
-    eval_stmt stmt1 env1 return
+    begin match expr1 with
+    | VClo (_env, param, body) ->
+      let value = ref None in
+      Env.bind name (_fix value) env @@ fun env1 ->
+      value := Some (_closure env1 param body);
+      eval_stmt stmt1 env1 return
+    | _ ->
+      Env.bind name expr1 env @@ fun env1 ->
+      eval_stmt stmt1 env1 return
+    end
   | SExpr expr ->
     eval_expr expr env return
 
