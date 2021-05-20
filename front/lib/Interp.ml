@@ -23,13 +23,29 @@ let rec eval_expr expr env return =
       eval_expr arg env @@ fun arg1 ->
       Env.bind param arg1 env1 @@ fun env2 ->
       eval_stmt body env2 return
+    | VFix maybe_value ->
+      begin match !maybe_value with
+      | None -> assert false (* Runtime invariant *)
+      | Some (VClo (env1, param, body)) ->
+        eval_expr arg env @@ fun arg1 ->
+        Env.bind param arg1 env1 @@ fun env2 ->
+        eval_stmt body env2 return
+      | _ -> assert false (* Typing invariant *)
+      end
     | _ -> assert false (* Typing invariant *)
     end
   | EAnno (expr, _poly) ->
     eval_expr expr env return
 and eval_stmt stmt env return =
+  let _closure env param body = VClo (env, param, body) in
+  let _fix maybe_value = VFix maybe_value in
   match stmt with
   | SDecl (_, _, stmt1) -> eval_stmt stmt1 env return
+  | SDefn (name, EAbs (param, body), stmt1) ->
+    let value = ref None in
+    Env.bind name (_fix value) env @@ fun env1 ->
+    value := Some (_closure env1 param body);
+    eval_stmt stmt1 env1 return
   | SDefn (name, expr, stmt1) ->
     eval_expr expr env @@ fun expr1 ->
     Env.bind name expr1 env @@ fun env1 ->

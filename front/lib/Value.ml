@@ -6,6 +6,7 @@ type value =
   | VUndefined
   | VUnit
   | VClo of (label, value) Env.env * label * stmt
+  | VFix of value option ref
 
 let value_2_expr value return =
   let rec _eval value return =
@@ -15,6 +16,11 @@ let value_2_expr value return =
     | VClo (env, param, body) ->
       _normalize_stmt body env @@ fun body1 ->
       return (expr_abs param body1)
+    | VFix maybe_value ->
+      begin match !maybe_value with
+      | None -> assert false (* Invariant *)
+      | Some value -> _eval value return
+      end
   and _normalize_expr expr env return =
     match expr with
     | EUndefined -> return expr_undefined
@@ -53,6 +59,7 @@ let print_value value return =
   | VUndefined -> return "undefined"
   | VUnit -> return "unit"
   | VClo _ -> return "<closure>"
+  | VFix _ -> return "<fixpoint>"
 
 let prepare env return =
   let _undefined = VUndefined in
